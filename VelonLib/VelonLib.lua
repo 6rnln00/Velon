@@ -260,11 +260,55 @@ function VelonLib:GetIcon(name)
     return ICONS[type(name) == "string" and name:lower() or name]
 end
 
+function VelonLib:ShowSplash(options)
+    options = merge({
+        Enabled = true, Duration = 1.5, Title = "VelonLib",
+        Subtitle = "Loading interface", Icon = "moon",
+    }, options)
+    if options.Enabled == false then return end
+    local gui = makeScreenGui("VelonLib_Splash", 110)
+    local background = create("CanvasGroup", {
+        Parent = gui, Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(5, 5, 6),
+        BackgroundTransparency = 0.08, GroupTransparency = 1,
+    })
+    local holder = create("Frame", {
+        Parent = background, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
+        Size = UDim2.fromOffset(360, 170), BackgroundTransparency = 1,
+    })
+    bindResponsiveScale(gui, holder, 400, 210)
+    local icon = makeIcon(holder, options.Icon, 50, COLORS.Text, 3)
+    icon.AnchorPoint, icon.Position = Vector2.new(0.5, 0.5), UDim2.fromScale(0.5, 0.34)
+    local title = create("TextLabel", {
+        Parent = holder, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0.58),
+        Size = UDim2.fromOffset(320, 28), BackgroundTransparency = 1,
+        Font = Enum.Font.GothamBold, Text = options.Title, TextColor3 = COLORS.Text, TextSize = 20,
+    })
+    local subtitle = create("TextLabel", {
+        Parent = holder, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0.77),
+        Size = UDim2.fromOffset(320, 22), BackgroundTransparency = 1,
+        Font = Enum.Font.Gotham, Text = options.Subtitle, TextColor3 = COLORS.Muted, TextSize = 12,
+    })
+    icon.Size = UDim2.fromOffset(28, 28)
+    title.TextTransparency, subtitle.TextTransparency = 1, 1
+    tween(background, 0.3, {GroupTransparency = 0})
+    tween(icon, 0.55, {Size = UDim2.fromOffset(50, 50), Rotation = 360}, Enum.EasingStyle.Back)
+    tween(title, 0.38, {TextTransparency = 0})
+    tween(subtitle, 0.46, {TextTransparency = 0})
+    task.wait(math.max(tonumber(options.Duration) or 1.5, 0.3))
+    if gui.Parent then
+        tween(background, 0.32, {GroupTransparency = 1})
+        tween(icon, 0.32, {Size = UDim2.fromOffset(64, 64)})
+        task.wait(0.34)
+        gui:Destroy()
+    end
+end
+
 function VelonLib:CreateKeySystem(options)
     options = merge({
         Title = "VelonLib", Subtitle = "Enter your access key", Icon = "key-round",
         KeyLink = "", Placeholder = "Enter key...", ButtonText = "Verify key",
         GetKeyText = "Get key", Validate = nil,
+        Splash = {Enabled = true, Duration = 1.5},
     }, options)
     assert(type(options.Validate) == "function", "CreateKeySystem requires Validate(key)")
 
@@ -272,14 +316,40 @@ function VelonLib:CreateKeySystem(options)
         pcall(GLOBAL_ENV.__VELONLIB_CANCEL_KEY_SYSTEM)
     end
     GLOBAL_ENV.__VELONLIB_CANCEL_KEY_SYSTEM = nil
+    local splashOptions = merge({Enabled = true, Duration = 1.5}, options.Splash)
+    splashOptions.Icon = splashOptions.Icon or options.Icon
+    splashOptions.Title = splashOptions.Title or options.Title
+    splashOptions.Subtitle = splashOptions.Subtitle or "Loading secure access"
+    self:ShowSplash(splashOptions)
     local gui = makeScreenGui("VelonLib_KeySystem", 100)
-    local dim = create("Frame", {Parent = gui, Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.28})
+    local dim = create("Frame", {Parent = gui, Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1})
     local panel = create("CanvasGroup", {
         Parent = dim, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
         Size = UDim2.fromOffset(410, 286), BackgroundColor3 = COLORS.Surface,
-        GroupTransparency = 1,
+        GroupTransparency = 1, Active = true,
     }, {corner(14)})
-    bindResponsiveScale(gui, panel, 440, 320)
+    local keyScale = bindResponsiveScale(gui, panel, 440, 320)
+
+    local dragHandle = create("Frame", {
+        Parent = panel, Size = UDim2.new(1, 0, 0, 78), BackgroundTransparency = 1,
+        Active = true, ZIndex = 8,
+    })
+    local dragging, dragStart, startPosition = false, nil, nil
+    dragHandle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging, dragStart, startPosition = true, input.Position, panel.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+            end)
+        end
+    end)
+    local dragConnection = UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = (input.Position - dragStart) / keyScale.Scale
+            panel.Position = UDim2.new(startPosition.X.Scale, startPosition.X.Offset + delta.X, startPosition.Y.Scale, startPosition.Y.Offset + delta.Y)
+        end
+    end)
+    gui.Destroying:Connect(function() dragConnection:Disconnect() end)
 
     local logoHolder = create("Frame", {Parent = panel, Position = UDim2.fromOffset(24, 24), Size = UDim2.fromOffset(44, 44), BackgroundColor3 = COLORS.Surface3}, {corner(11)})
     local logo = makeIcon(logoHolder, options.Icon, 22, COLORS.Text, 3)
@@ -408,6 +478,7 @@ function VelonLib:CreateWindow(options)
     local window = {
         Gui = gui, Options = options, Theme = theme, Flags = {}, Tabs = {}, Connections = {},
         Destroyed = false, Minimized = false, Visible = true, ESPControllers = {},
+        SplashActive = options.Splash and options.Splash.Enabled ~= false,
     }
     table.insert(self.Windows, window)
 
@@ -415,7 +486,7 @@ function VelonLib:CreateWindow(options)
     local root = create("CanvasGroup", {
         Parent = gui, Name = "Window", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
         Size = UDim2.fromOffset(options.Width, options.Height), BackgroundColor3 = theme.Background,
-        GroupTransparency = 1, ZIndex = 20, ClipsDescendants = true,
+        GroupTransparency = 1, ZIndex = 20, ClipsDescendants = false,
     }, {corner(14)})
     local scale = bindResponsiveScale(gui, root, options.Width + 24, options.Height + 24)
     window.Root, window.Scale, window.Overlay = root, scale, overlay
@@ -466,6 +537,8 @@ function VelonLib:CreateWindow(options)
         end
     end))
 
+    local setTabPreviews
+
     function window:Notify(notification)
         if self.Destroyed or not gui.Parent then return end
         notification = merge({Title = "VelonLib", Content = "", Duration = 3, Icon = "info"}, notification)
@@ -509,6 +582,7 @@ function VelonLib:CreateWindow(options)
         self.Minimized = state
         local targetHeight = state and 58 or options.Height
         if not state then sidebar.Visible, content.Visible = true, true end
+        if setTabPreviews then setTabPreviews(self.SelectedTab, not state) end
         tween(root, 0.35, {Size = UDim2.fromOffset(options.Width, targetHeight)}, Enum.EasingStyle.Quart)
         if state then task.delay(0.16, function() if self.Minimized then sidebar.Visible, content.Visible = false, false end end) end
     end
@@ -545,11 +619,34 @@ function VelonLib:CreateWindow(options)
         if not processed and input.KeyCode == options.ToggleKey then window:Toggle() end
     end))
 
+    setTabPreviews = function(tab, visible)
+        if not tab or not tab.PreviewPanels then return end
+        visible = visible and not window.Minimized and not window.SplashActive
+        for _, panel in ipairs(tab.PreviewPanels) do
+            if panel and panel.Parent then
+                local token = (panel:GetAttribute("VelonPreviewToken") or 0) + 1
+                panel:SetAttribute("VelonPreviewToken", token)
+                if visible then
+                    panel.Visible = true
+                    panel.GroupTransparency = 1
+                    panel.Position = UDim2.new(1, 26, 0, 0)
+                    tween(panel, 0.24, {GroupTransparency = 0, Position = UDim2.new(1, 12, 0, 0)}, Enum.EasingStyle.Quart)
+                else
+                    tween(panel, 0.18, {GroupTransparency = 1, Position = UDim2.new(1, 24, 0, 0)})
+                    task.delay(0.19, function()
+                        if panel.Parent and panel:GetAttribute("VelonPreviewToken") == token then panel.Visible = false end
+                    end)
+                end
+            end
+        end
+    end
+
     function window:SelectTab(tab)
         if self.Destroyed or type(tab) ~= "table" or tab.Window ~= self or not tab.Page.Parent then return end
         if self.SelectedTab == tab then return end
         if self.SelectedTab then
             local previous = self.SelectedTab
+            setTabPreviews(previous, false)
             tween(previous.Button, 0.18, {BackgroundColor3 = theme.Surface})
             tween(previous.Icon, 0.18, {ImageColor3 = theme.Muted})
             tween(previous.Page, 0.15, {GroupTransparency = 1, Position = UDim2.fromOffset(12, 0)})
@@ -560,12 +657,13 @@ function VelonLib:CreateWindow(options)
         tween(tab.Button, 0.18, {BackgroundColor3 = theme.Accent})
         tween(tab.Icon, 0.18, {ImageColor3 = theme.AccentText})
         tween(tab.Page, 0.24, {GroupTransparency = 0, Position = UDim2.fromOffset(0, 0)}, Enum.EasingStyle.Quart)
+        setTabPreviews(tab, true)
     end
 
     function window:CreateTab(tabOptions)
         if type(tabOptions) == "string" then tabOptions = {Name = tabOptions} end
         tabOptions = merge({Name = "Tab", Icon = "circle-help"}, tabOptions)
-        local tab = {Window = self, Options = tabOptions, Controls = {}}
+        local tab = {Window = self, Options = tabOptions, Controls = {}, PreviewPanels = {}}
         local button = create("TextButton", {Parent = tabList, Size = UDim2.fromOffset(42, 42), AutoButtonColor = false, BackgroundColor3 = theme.Surface, Text = "", ZIndex = 23}, {corner(9)})
         local icon = makeIcon(button, tabOptions.Icon, 18, theme.Muted, 24)
         icon.AnchorPoint, icon.Position = Vector2.new(0.5, 0.5), UDim2.fromScale(0.5, 0.5)
@@ -905,15 +1003,17 @@ function VelonLib:CreateWindow(options)
             local controller = {
                 Settings = settings,
                 Objects = {},
+                Targets = {},
                 Connections = {},
                 Destroyed = false,
                 Preview = nil,
             }
 
             local function createPreview()
-                local card = create("Frame", {
-                    Parent = scroll, Size = UDim2.new(1, -5, 0, 306),
-                    BackgroundColor3 = theme.Surface, ClipsDescendants = true, ZIndex = 25,
+                local card = create("CanvasGroup", {
+                    Parent = root, Position = UDim2.new(1, 24, 0, 0), Size = UDim2.fromOffset(280, options.Height),
+                    BackgroundColor3 = theme.Surface, GroupTransparency = 1,
+                    ClipsDescendants = true, Visible = false, ZIndex = 25,
                 }, {corner(10), stroke(theme.Border, 0.58)})
                 create("TextLabel", {
                     Parent = card, BackgroundTransparency = 1, Position = UDim2.fromOffset(14, 8),
@@ -928,12 +1028,12 @@ function VelonLib:CreateWindow(options)
                     TextSize = 10, ZIndex = 27,
                 }, {corner(6)})
                 local stage = create("Frame", {
-                    Parent = card, Position = UDim2.fromOffset(14, 43), Size = UDim2.new(1, -28, 0, 248),
+                    Parent = card, Position = UDim2.fromOffset(14, 43), Size = UDim2.new(1, -28, 1, -57),
                     BackgroundColor3 = theme.Background, ClipsDescendants = true, ZIndex = 26,
                 }, {corner(8)})
                 local avatar = create("ImageLabel", {
                     Parent = stage, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.53),
-                    Size = UDim2.fromOffset(190, 220), BackgroundTransparency = 1,
+                    Size = UDim2.fromOffset(230, 350), BackgroundTransparency = 1,
                     ScaleType = Enum.ScaleType.Fit, ZIndex = 27,
                 })
                 local nameLabel = create("TextLabel", {
@@ -970,6 +1070,7 @@ function VelonLib:CreateWindow(options)
                     Box = boxLines, Skeleton = skeletonLines, Tracer = tracer,
                     Token = 0,
                 }
+                table.insert(tab.PreviewPanels, card)
 
                 function controller:RefreshPreview()
                     local preview = self.Preview
@@ -1072,7 +1173,10 @@ function VelonLib:CreateWindow(options)
                     controller:RefreshPreview()
                 end))
                 controller:SetPreviewPlayer(config.PreviewPlayer or LocalPlayer)
-                task.defer(function() controller:RefreshPreview() end)
+                task.defer(function()
+                    controller:RefreshPreview()
+                    if window.SelectedTab == tab and setTabPreviews then setTabPreviews(tab, true) end
+                end)
             end
 
             local function hideVisual(visual)
@@ -1087,6 +1191,7 @@ function VelonLib:CreateWindow(options)
             end
 
             local function removeVisual(player)
+                controller.Targets[player] = nil
                 local visual = controller.Objects[player]
                 if not visual then return end
                 for _, object in ipairs(visual.All) do pcall(function() object:Destroy() end) end
@@ -1272,11 +1377,17 @@ function VelonLib:CreateWindow(options)
                 local playersToRemove = {}
                 for player in pairs(self.Objects) do table.insert(playersToRemove, player) end
                 for _, player in ipairs(playersToRemove) do removeVisual(player) end
+                self.Targets = {}
                 if self.Preview and self.Preview.Root then self.Preview.Root:Destroy() end
                 self.Preview = nil
             end
 
+            local function addTarget(player)
+                if player ~= LocalPlayer then controller.Targets[player] = true end
+            end
+            table.insert(controller.Connections, Players.PlayerAdded:Connect(addTarget))
             table.insert(controller.Connections, Players.PlayerRemoving:Connect(removeVisual))
+            for _, player in ipairs(Players:GetPlayers()) do addTarget(player) end
             local elapsed = 0
             table.insert(controller.Connections, RunService.RenderStepped:Connect(function(deltaTime)
                 if controller.Destroyed then return end
@@ -1287,8 +1398,8 @@ function VelonLib:CreateWindow(options)
                 elapsed = updateRate > 0 and math.max(elapsed - updateRate, 0) or 0
                 local camera = workspace.CurrentCamera
                 if not camera then return end
-                for _, player in ipairs(Players:GetPlayers()) do
-                    if player ~= LocalPlayer then updatePlayer(camera, player, getVisual(player)) end
+                for player in pairs(controller.Targets) do
+                    updatePlayer(camera, player, getVisual(player))
                 end
             end))
 
@@ -1335,7 +1446,16 @@ function VelonLib:CreateWindow(options)
         splashLogo.Size = UDim2.fromOffset(26, 26)
         tween(splashLogo, 0.55, {Size = UDim2.fromOffset(42, 42), Rotation = 360}, Enum.EasingStyle.Back)
         splashText.TextTransparency = 1 tween(splashText, 0.4, {TextTransparency = 0})
-        task.delay(options.Splash.Duration or 1.6, function() if splash.Parent then tween(splash, 0.35, {GroupTransparency = 1}); tween(splashLogo, 0.35, {Size = UDim2.fromOffset(58, 58)}); task.wait(0.37); splash:Destroy() end end)
+        task.delay(options.Splash.Duration or 1.6, function()
+            if splash.Parent then
+                tween(splash, 0.35, {GroupTransparency = 1})
+                tween(splashLogo, 0.35, {Size = UDim2.fromOffset(58, 58)})
+                task.wait(0.37)
+                splash:Destroy()
+            end
+            window.SplashActive = false
+            if setTabPreviews then setTabPreviews(window.SelectedTab, true) end
+        end)
     end
 
     return window
