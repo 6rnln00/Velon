@@ -1007,14 +1007,17 @@ function VelonLib:CreateWindow(options)
             }
 
             local function createPreview()
-                local card = create("CanvasGroup", {
+                local host = create("CanvasGroup", {
                     Parent = gui, Position = UDim2.fromOffset(0, 0), Size = UDim2.fromOffset(280, options.Height),
-                    BackgroundColor3 = theme.Surface, GroupTransparency = 1,
-                    Visible = false, ZIndex = 25,
+                    BackgroundTransparency = 1, GroupTransparency = 1, Visible = false, ZIndex = 25,
+                })
+                local card = create("Frame", {
+                    Parent = host, Size = UDim2.fromOffset(280, options.Height),
+                    BackgroundColor3 = theme.Surface, ZIndex = 26,
                 }, {corner(10), stroke(theme.Border, 0.58)})
                 local previewScale = create("UIScale", {Parent = card, Scale = scale.Scale})
                 local function syncPreviewPosition()
-                    if not card.Parent or not root.Parent then return end
+                    if not host.Parent or not root.Parent then return end
                     previewScale.Scale = scale.Scale
                     local camera = workspace.CurrentCamera
                     local viewport = camera and camera.ViewportSize or Vector2.new(1920, 1080)
@@ -1024,7 +1027,8 @@ function VelonLib:CreateWindow(options)
                     local positionY = root.AbsolutePosition.Y
                     positionX = math.clamp(positionX, 8, math.max(8, viewport.X - panelWidth - 8))
                     positionY = math.clamp(positionY, 8, math.max(8, viewport.Y - panelHeight - 8))
-                    card.Position = UDim2.fromOffset(positionX, positionY)
+                    host.Position = UDim2.fromOffset(positionX, positionY)
+                    host.Size = UDim2.fromOffset(panelWidth, panelHeight)
                 end
                 create("TextLabel", {
                     Parent = card, BackgroundTransparency = 1, Position = UDim2.fromOffset(14, 8),
@@ -1044,7 +1048,7 @@ function VelonLib:CreateWindow(options)
                 }, {corner(8)})
                 local avatar = create("ImageLabel", {
                     Parent = stage, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.53),
-                    Size = UDim2.fromOffset(230, 350), BackgroundTransparency = 1,
+                    Size = UDim2.fromOffset(250, 250), BackgroundTransparency = 1,
                     ScaleType = Enum.ScaleType.Fit, ZIndex = 27,
                 })
                 local nameLabel = create("TextLabel", {
@@ -1075,13 +1079,13 @@ function VelonLib:CreateWindow(options)
                 local tracer = makeLine(stage, settings.TracerColor, settings.Thickness, 32)
 
                 controller.Preview = {
-                    Root = card, Stage = stage, Avatar = avatar, Badge = badge,
+                    Root = host, Card = card, Stage = stage, Avatar = avatar, Badge = badge,
                     Name = nameLabel, Distance = distanceLabel,
                     HealthBack = healthBack, HealthFill = healthFill,
                     Box = boxLines, Skeleton = skeletonLines, Tracer = tracer,
                     Scale = previewScale, Token = 0,
                 }
-                table.insert(tab.PreviewPanels, card)
+                table.insert(tab.PreviewPanels, host)
                 table.insert(controller.Connections, root:GetPropertyChangedSignal("AbsolutePosition"):Connect(syncPreviewPosition))
                 table.insert(controller.Connections, root:GetPropertyChangedSignal("AbsoluteSize"):Connect(syncPreviewPosition))
                 table.insert(controller.Connections, scale:GetPropertyChangedSignal("Scale"):Connect(syncPreviewPosition))
@@ -1093,10 +1097,10 @@ function VelonLib:CreateWindow(options)
                     local size = preview.Stage.AbsoluteSize
                     if size.X <= 0 or size.Y <= 0 then return end
                     local centerX = size.X / 2
-                    local top = size.Y * 0.105
-                    local bottom = size.Y * 0.91
+                    local top = size.Y * 0.34
+                    local bottom = size.Y * 0.77
                     local height = bottom - top
-                    local width = math.min(height * 0.47, size.X * 0.34)
+                    local width = math.min(height * 0.56, size.X * 0.46)
                     local left, right = centerX - width / 2, centerX + width / 2
                     local boxPoints = {
                         {Vector2.new(left, top), Vector2.new(right, top)},
