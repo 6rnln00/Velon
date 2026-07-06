@@ -28,7 +28,7 @@ local COLORS = {
     Surface = Color3.fromRGB(17, 17, 19),
     Surface2 = Color3.fromRGB(24, 24, 27),
     Surface3 = Color3.fromRGB(31, 31, 35),
-    Border = Color3.fromRGB(53, 53, 59),
+    Border = Color3.fromRGB(38, 38, 42),
     Text = Color3.fromRGB(244, 244, 245),
     Muted = Color3.fromRGB(153, 153, 164),
     Accent = Color3.fromRGB(255, 255, 255),
@@ -274,10 +274,10 @@ function VelonLib:CreateKeySystem(options)
         Parent = dim, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
         Size = UDim2.fromOffset(410, 286), BackgroundColor3 = COLORS.Surface,
         GroupTransparency = 1,
-    }, {corner(14), stroke(COLORS.Border, 0.1, 1)})
+    }, {corner(14)})
     bindResponsiveScale(gui, panel, 440, 320)
 
-    local logoHolder = create("Frame", {Parent = panel, Position = UDim2.fromOffset(24, 24), Size = UDim2.fromOffset(44, 44), BackgroundColor3 = COLORS.Surface3}, {corner(11), stroke(COLORS.Border, 0.25)})
+    local logoHolder = create("Frame", {Parent = panel, Position = UDim2.fromOffset(24, 24), Size = UDim2.fromOffset(44, 44), BackgroundColor3 = COLORS.Surface3}, {corner(11)})
     local logo = makeIcon(logoHolder, options.Icon, 22, COLORS.Text, 3)
     logo.AnchorPoint, logo.Position = Vector2.new(0.5, 0.5), UDim2.fromScale(0.5, 0.5)
     create("TextLabel", {Parent = panel, BackgroundTransparency = 1, Position = UDim2.fromOffset(80, 23), Size = UDim2.new(1, -104, 0, 24), Font = Enum.Font.GothamBold, Text = options.Title, TextColor3 = COLORS.Text, TextSize = 18, TextXAlignment = Enum.TextXAlignment.Left})
@@ -285,7 +285,7 @@ function VelonLib:CreateKeySystem(options)
 
     local inputHolder = create("Frame", {Parent = panel, Position = UDim2.fromOffset(24, 89), Size = UDim2.new(1, -48, 0, 48), BackgroundColor3 = COLORS.Background}, {corner(9), stroke(COLORS.Border, 0.15), padding(14, 14, 0, 0)})
     local keyBox = create("TextBox", {Parent = inputHolder, Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ClearTextOnFocus = false, Font = Enum.Font.Gotham, PlaceholderText = options.Placeholder, PlaceholderColor3 = COLORS.Muted, Text = "", TextColor3 = COLORS.Text, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left})
-    local status = create("TextLabel", {Parent = panel, BackgroundTransparency = 1, Position = UDim2.fromOffset(24, 143), Size = UDim2.new(1, -48, 0, 20), Font = Enum.Font.Gotham, Text = "", TextColor3 = COLORS.Muted, TextSize = 11, TextXAlignment = Enum.TextXAlignment.Left})
+    local status = create("TextLabel", {Parent = panel, BackgroundTransparency = 1, Position = UDim2.fromOffset(24, 143), Size = UDim2.new(1, -48, 0, 20), Font = Enum.Font.Gotham, Text = "", TextColor3 = COLORS.Muted, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left})
 
     local verify = create("TextButton", {Parent = panel, Position = UDim2.fromOffset(24, 174), Size = UDim2.new(1, -48, 0, 44), AutoButtonColor = false, BackgroundColor3 = COLORS.Accent, Font = Enum.Font.GothamSemibold, Text = options.ButtonText, TextColor3 = COLORS.AccentText, TextSize = 13}, {corner(9)})
     local getKey = create("TextButton", {Parent = panel, Position = UDim2.fromOffset(24, 226), Size = UDim2.new(1, -48, 0, 36), AutoButtonColor = false, BackgroundColor3 = COLORS.Surface2, Font = Enum.Font.GothamMedium, Text = options.GetKeyText, TextColor3 = COLORS.Text, TextSize = 12}, {corner(9), stroke(COLORS.Border, 0.2)})
@@ -384,22 +384,22 @@ function VelonLib:CreateWindow(options)
         Parent = gui, Name = "Window", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
         Size = UDim2.fromOffset(options.Width, options.Height), BackgroundColor3 = theme.Background,
         GroupTransparency = 1, ZIndex = 20, ClipsDescendants = true,
-    }, {corner(14), stroke(theme.Border, 0.08, 1)})
+    }, {corner(14)})
     local scale = bindResponsiveScale(gui, root, options.Width + 24, options.Height + 24)
     window.Root, window.Scale, window.Overlay = root, scale, overlay
 
     local topbar = create("Frame", {Parent = root, Size = UDim2.new(1, 0, 0, 58), BackgroundColor3 = theme.Surface, BorderSizePixel = 0, ZIndex = 22})
-    create("Frame", {Parent = topbar, Position = UDim2.new(0, 0, 1, -1), Size = UDim2.new(1, 0, 0, 1), BackgroundColor3 = theme.Border, BackgroundTransparency = 0.3, BorderSizePixel = 0, ZIndex = 23})
-    local brandHolder = create("Frame", {Parent = topbar, Position = UDim2.fromOffset(16, 11), Size = UDim2.fromOffset(36, 36), BackgroundColor3 = theme.Surface3, ZIndex = 23}, {corner(9), stroke(theme.Border, 0.25)})
+    create("Frame", {Parent = topbar, Position = UDim2.new(0, 0, 1, -1), Size = UDim2.new(1, 0, 0, 1), BackgroundColor3 = theme.Border, BackgroundTransparency = 0.72, BorderSizePixel = 0, ZIndex = 23})
+    local brandHolder = create("Frame", {Parent = topbar, Position = UDim2.fromOffset(16, 11), Size = UDim2.fromOffset(36, 36), BackgroundColor3 = theme.Surface3, ZIndex = 23}, {corner(9)})
     local brandIcon = makeIcon(brandHolder, options.Icon, 19, theme.Text, 24)
     brandIcon.AnchorPoint, brandIcon.Position = Vector2.new(0.5, 0.5), UDim2.fromScale(0.5, 0.5)
-    local titleLabel = create("TextLabel", {Parent = topbar, BackgroundTransparency = 1, Position = UDim2.fromOffset(64, 11), Size = UDim2.new(1, -230, 0, 21), Font = Enum.Font.GothamBold, Text = options.Title, TextColor3 = theme.Text, TextSize = 15, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 23})
-    local subtitleLabel = create("TextLabel", {Parent = topbar, BackgroundTransparency = 1, Position = UDim2.fromOffset(64, 31), Size = UDim2.new(1, -230, 0, 16), Font = Enum.Font.Gotham, Text = options.Subtitle, TextColor3 = theme.Muted, TextSize = 10, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 23})
+    local titleLabel = create("TextLabel", {Parent = topbar, BackgroundTransparency = 1, Position = UDim2.fromOffset(64, 11), Size = UDim2.new(1, -230, 0, 21), Font = Enum.Font.GothamBold, Text = options.Title, TextColor3 = theme.Text, TextSize = 16, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 23})
+    local subtitleLabel = create("TextLabel", {Parent = topbar, BackgroundTransparency = 1, Position = UDim2.fromOffset(64, 31), Size = UDim2.new(1, -230, 0, 16), Font = Enum.Font.Gotham, Text = options.Subtitle, TextColor3 = theme.Muted, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 23})
 
     local actionHolder = create("Frame", {Parent = topbar, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.fromOffset(126, 34), BackgroundTransparency = 1, ZIndex = 23})
     create("UIListLayout", {Parent = actionHolder, FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Right, Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder})
     local function actionButton(icon, order)
-        local button = create("TextButton", {Parent = actionHolder, LayoutOrder = order, Size = UDim2.fromOffset(34, 34), AutoButtonColor = false, Text = "", BackgroundColor3 = theme.Surface2, ZIndex = 24}, {corner(8), stroke(theme.Border, 0.3)})
+        local button = create("TextButton", {Parent = actionHolder, LayoutOrder = order, Size = UDim2.fromOffset(34, 34), AutoButtonColor = false, Text = "", BackgroundColor3 = theme.Surface2, ZIndex = 24}, {corner(8)})
         local image = makeIcon(button, icon, 16, theme.Muted, 25)
         image.AnchorPoint, image.Position = Vector2.new(0.5, 0.5), UDim2.fromScale(0.5, 0.5)
         attachHover(button, theme.Surface2, theme.Surface3)
@@ -413,7 +413,7 @@ function VelonLib:CreateWindow(options)
     closeButton.MouseEnter:Connect(function() tween(closeButton, 0.14, {BackgroundColor3 = theme.Danger}); tween(closeIcon, 0.14, {ImageColor3 = Color3.new(1, 1, 1)}) end)
 
     local sidebar = create("Frame", {Parent = root, Position = UDim2.fromOffset(0, 58), Size = UDim2.new(0, 64, 1, -58), BackgroundColor3 = theme.Surface, BorderSizePixel = 0, ZIndex = 21})
-    create("Frame", {Parent = sidebar, Position = UDim2.new(1, -1, 0, 0), Size = UDim2.new(0, 1, 1, 0), BackgroundColor3 = theme.Border, BackgroundTransparency = 0.35, BorderSizePixel = 0, ZIndex = 22})
+    create("Frame", {Parent = sidebar, Position = UDim2.new(1, -1, 0, 0), Size = UDim2.new(0, 1, 1, 0), BackgroundColor3 = theme.Border, BackgroundTransparency = 0.72, BorderSizePixel = 0, ZIndex = 22})
     local tabList = create("Frame", {Parent = sidebar, Position = UDim2.fromOffset(0, 12), Size = UDim2.new(1, 0, 1, -24), BackgroundTransparency = 1, ZIndex = 22})
     create("UIListLayout", {Parent = tabList, HorizontalAlignment = Enum.HorizontalAlignment.Center, Padding = UDim.new(0, 9), SortOrder = Enum.SortOrder.LayoutOrder})
     local content = create("Frame", {Parent = root, Position = UDim2.fromOffset(64, 58), Size = UDim2.new(1, -64, 1, -58), BackgroundTransparency = 1, ClipsDescendants = true, ZIndex = 21})
@@ -438,11 +438,11 @@ function VelonLib:CreateWindow(options)
         notification = merge({Title = "VelonLib", Content = "", Duration = 3, Icon = "info"}, notification)
         local holder = gui:FindFirstChild("Notifications") or create("Frame", {Parent = gui, Name = "Notifications", AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -18, 1, -18), Size = UDim2.fromOffset(320, 400), BackgroundTransparency = 1, ZIndex = 80})
         if not holder:FindFirstChildOfClass("UIListLayout") then create("UIListLayout", {Parent = holder, VerticalAlignment = Enum.VerticalAlignment.Bottom, HorizontalAlignment = Enum.HorizontalAlignment.Right, Padding = UDim.new(0, 8)}) end
-        local toast = create("CanvasGroup", {Parent = holder, Size = UDim2.fromOffset(310, 76), BackgroundColor3 = theme.Surface, GroupTransparency = 1, ZIndex = 81}, {corner(10), stroke(theme.Border, 0.12), padding(14, 14, 12, 12)})
+        local toast = create("CanvasGroup", {Parent = holder, Size = UDim2.fromOffset(310, 76), BackgroundColor3 = theme.Surface, GroupTransparency = 1, ZIndex = 81}, {corner(10), stroke(theme.Border, 0.58), padding(14, 14, 12, 12)})
         local icon = makeIcon(toast, notification.Icon, 18, theme.Text, 82)
         icon.Position = UDim2.fromOffset(0, 2)
         create("TextLabel", {Parent = toast, BackgroundTransparency = 1, Position = UDim2.fromOffset(30, -2), Size = UDim2.new(1, -30, 0, 22), Font = Enum.Font.GothamSemibold, Text = notification.Title, TextColor3 = theme.Text, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 82})
-        create("TextLabel", {Parent = toast, BackgroundTransparency = 1, Position = UDim2.fromOffset(30, 21), Size = UDim2.new(1, -30, 0, 31), Font = Enum.Font.Gotham, Text = notification.Content, TextColor3 = theme.Muted, TextSize = 11, TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top, ZIndex = 82})
+        create("TextLabel", {Parent = toast, BackgroundTransparency = 1, Position = UDim2.fromOffset(30, 21), Size = UDim2.new(1, -30, 0, 31), Font = Enum.Font.Gotham, Text = notification.Content, TextColor3 = theme.Muted, TextSize = 12, TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top, ZIndex = 82})
         toast.Position = UDim2.fromOffset(35, 0)
         tween(toast, 0.3, {GroupTransparency = 0, Position = UDim2.fromOffset(0, 0)}, Enum.EasingStyle.Quart)
         task.delay(notification.Duration, function()
@@ -524,11 +524,8 @@ function VelonLib:CreateWindow(options)
         local button = create("TextButton", {Parent = tabList, Size = UDim2.fromOffset(42, 42), AutoButtonColor = false, BackgroundColor3 = theme.Surface, Text = "", ZIndex = 23}, {corner(9)})
         local icon = makeIcon(button, tabOptions.Icon, 18, theme.Muted, 24)
         icon.AnchorPoint, icon.Position = Vector2.new(0.5, 0.5), UDim2.fromScale(0.5, 0.5)
-        local tooltip = create("TextLabel", {Parent = button, Visible = false, Position = UDim2.fromOffset(50, 7), Size = UDim2.fromOffset(math.max(68, #tabOptions.Name * 7 + 20), 28), BackgroundColor3 = theme.Surface3, Font = Enum.Font.GothamMedium, Text = tabOptions.Name, TextColor3 = theme.Text, TextSize = 11, ZIndex = 70}, {corner(7), stroke(theme.Border, 0.2)})
-        button.MouseEnter:Connect(function() tooltip.Visible = true tooltip.TextTransparency = 1 tooltip.Position = UDim2.fromOffset(46, 7) tween(tooltip, 0.16, {TextTransparency = 0, Position = UDim2.fromOffset(50, 7)}) end)
-        button.MouseLeave:Connect(function() tooltip.Visible = false end)
         local page = create("CanvasGroup", {Parent = pages, Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Visible = false, GroupTransparency = 1, ZIndex = 23})
-        local heading = create("TextLabel", {Parent = page, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 28), Font = Enum.Font.GothamBold, Text = tabOptions.Name, TextColor3 = theme.Text, TextSize = 19, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 24})
+        local heading = create("TextLabel", {Parent = page, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 28), Font = Enum.Font.GothamBold, Text = tabOptions.Name, TextColor3 = theme.Text, TextSize = 20, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 24})
         local scroll = create("ScrollingFrame", {Parent = page, Position = UDim2.fromOffset(0, 39), Size = UDim2.new(1, 0, 1, -39), BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 3, ScrollBarImageColor3 = theme.Border, AutomaticCanvasSize = Enum.AutomaticSize.Y, CanvasSize = UDim2.new(), ScrollingDirection = Enum.ScrollingDirection.Y, ZIndex = 24}, {padding(0, 5, 0, 4)})
         create("UIListLayout", {Parent = scroll, Padding = UDim.new(0, 9), SortOrder = Enum.SortOrder.LayoutOrder})
         tab.Button, tab.Icon, tab.Page, tab.Scroll, tab.Heading = button, icon, page, scroll, heading
@@ -538,8 +535,6 @@ function VelonLib:CreateWindow(options)
         function tab:SetName(name)
             self.Options.Name = tostring(name)
             self.Heading.Text = self.Options.Name
-            tooltip.Text = self.Options.Name
-            tooltip.Size = UDim2.fromOffset(math.max(68, #self.Options.Name * 7 + 20), 28)
         end
 
         function tab:SetIcon(newIcon)
@@ -553,9 +548,13 @@ function VelonLib:CreateWindow(options)
 
         local function controlBase(config, height)
             config = merge({Name = "Control", Description = ""}, config)
-            local holder = create("Frame", {Parent = scroll, Size = UDim2.new(1, -5, 0, height or 56), BackgroundColor3 = theme.Surface, ClipsDescendants = true, ZIndex = 25}, {corner(9), stroke(theme.Border, 0.24)})
-            local title = create("TextLabel", {Parent = holder, BackgroundTransparency = 1, Position = UDim2.fromOffset(14, config.Description ~= "" and 9 or 0), Size = UDim2.new(1, -28, 0, config.Description ~= "" and 20 or height or 56), Font = Enum.Font.GothamMedium, Text = config.Name, TextColor3 = theme.Text, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 26})
-            if config.Description ~= "" then create("TextLabel", {Parent = holder, BackgroundTransparency = 1, Position = UDim2.fromOffset(14, 29), Size = UDim2.new(1, -28, 0, 16), Font = Enum.Font.Gotham, Text = config.Description, TextColor3 = theme.Muted, TextSize = 10, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 26}) end
+            config.Name = config.Title or config.Name
+            config.Description = config.Subtitle or config.Description
+            local holder = create("Frame", {Parent = scroll, Size = UDim2.new(1, -5, 0, height or 60), BackgroundColor3 = theme.Surface, ClipsDescendants = true, ZIndex = 25}, {corner(9), stroke(theme.Border, 0.58)})
+            local hasSubtitle = config.Description ~= ""
+            local rightSpace = config.RightSpace or 14
+            local title = create("TextLabel", {Parent = holder, BackgroundTransparency = 1, Position = UDim2.fromOffset(14, hasSubtitle and 9 or 0), Size = UDim2.new(1, -(14 + rightSpace), 0, hasSubtitle and 22 or height or 60), Font = Enum.Font.GothamMedium, Text = config.Name, TextColor3 = theme.Text, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 26})
+            if hasSubtitle then create("TextLabel", {Parent = holder, BackgroundTransparency = 1, Position = UDim2.fromOffset(14, 31), Size = UDim2.new(1, -(14 + rightSpace), 0, 18), Font = Enum.Font.Gotham, Text = config.Description, TextColor3 = theme.Muted, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 26}) end
             holder.MouseEnter:Connect(function() tween(holder, 0.16, {BackgroundColor3 = theme.Surface2}) end)
             holder.MouseLeave:Connect(function() tween(holder, 0.16, {BackgroundColor3 = theme.Surface}) end)
             return holder, title, config
@@ -566,21 +565,42 @@ function VelonLib:CreateWindow(options)
         end
 
         function tab:CreateSection(name)
-            local label = create("TextLabel", {Parent = scroll, Size = UDim2.new(1, -5, 0, 24), BackgroundTransparency = 1, Font = Enum.Font.GothamSemibold, Text = string.upper(tostring(name)), TextColor3 = theme.Muted, TextSize = 9, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 25})
+            local label = create("TextLabel", {Parent = scroll, Size = UDim2.new(1, -5, 0, 26), BackgroundTransparency = 1, Font = Enum.Font.GothamSemibold, Text = string.upper(tostring(name)), TextColor3 = theme.Muted, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 25})
             return label
+        end
+
+        function tab:CreateHeader(config)
+            if type(config) == "string" then config = {Title = config} end
+            config = merge({Title = "Header", Subtitle = "", Icon = nil}, config)
+            local holder = create("Frame", {Parent = scroll, Size = UDim2.new(1, -5, 0, config.Subtitle ~= "" and 70 or 58), BackgroundColor3 = theme.Surface2, ZIndex = 25}, {corner(10)})
+            create("Frame", {Parent = holder, Position = UDim2.fromOffset(0, 12), Size = UDim2.fromOffset(3, config.Subtitle ~= "" and 46 or 34), BackgroundColor3 = theme.Accent, BorderSizePixel = 0, ZIndex = 26}, {corner(2)})
+            local textOffset = config.Icon and 54 or 16
+            if config.Icon then
+                local iconHolder = create("Frame", {Parent = holder, Position = UDim2.fromOffset(14, 14), Size = UDim2.fromOffset(34, 34), BackgroundColor3 = theme.Surface3, ZIndex = 26}, {corner(8)})
+                local headerIcon = makeIcon(iconHolder, config.Icon, 17, theme.Text, 27)
+                headerIcon.AnchorPoint, headerIcon.Position = Vector2.new(0.5, 0.5), UDim2.fromScale(0.5, 0.5)
+            end
+            local title = create("TextLabel", {Parent = holder, BackgroundTransparency = 1, Position = UDim2.fromOffset(textOffset, config.Subtitle ~= "" and 11 or 0), Size = UDim2.new(1, -textOffset - 14, 0, config.Subtitle ~= "" and 24 or 58), Font = Enum.Font.GothamBold, Text = config.Title, TextColor3 = theme.Text, TextSize = 15, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 26})
+            local subtitle
+            if config.Subtitle ~= "" then subtitle = create("TextLabel", {Parent = holder, BackgroundTransparency = 1, Position = UDim2.fromOffset(textOffset, 36), Size = UDim2.new(1, -textOffset - 14, 0, 20), Font = Enum.Font.Gotham, Text = config.Subtitle, TextColor3 = theme.Muted, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 26}) end
+            return {
+                SetTitle = function(_, value) title.Text = tostring(value) end,
+                SetSubtitle = function(_, value) if subtitle then subtitle.Text = tostring(value) end end,
+                Destroy = function() holder:Destroy() end,
+            }
         end
 
         function tab:CreateParagraph(config)
             if type(config) == "string" then config = {Name = config} end
             local holder, title, final = controlBase(config, 72)
             title.Size = UDim2.new(1, -28, 0, 21)
-            local contentLabel = create("TextLabel", {Parent = holder, BackgroundTransparency = 1, Position = UDim2.fromOffset(14, 30), Size = UDim2.new(1, -28, 0, 32), Font = Enum.Font.Gotham, Text = final.Content or final.Description or "", TextColor3 = theme.Muted, TextSize = 10, TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top, ZIndex = 26})
+            local contentLabel = create("TextLabel", {Parent = holder, BackgroundTransparency = 1, Position = UDim2.fromOffset(14, 30), Size = UDim2.new(1, -28, 0, 32), Font = Enum.Font.Gotham, Text = final.Content or final.Description or "", TextColor3 = theme.Muted, TextSize = 12, TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top, ZIndex = 26})
             return {Set = function(_, value) contentLabel.Text = value end, Destroy = function() holder:Destroy() end}
         end
 
         function tab:CreateButton(config)
             local holder, _, final = controlBase(config, 54)
-            local button = create("TextButton", {Parent = holder, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.fromOffset(92, 32), AutoButtonColor = false, BackgroundColor3 = theme.Accent, Font = Enum.Font.GothamSemibold, Text = final.ButtonText or "Run", TextColor3 = theme.AccentText, TextSize = 11, ZIndex = 27}, {corner(7)})
+            local button = create("TextButton", {Parent = holder, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.fromOffset(92, 32), AutoButtonColor = false, BackgroundColor3 = theme.Accent, Font = Enum.Font.GothamSemibold, Text = final.ButtonText or "Run", TextColor3 = theme.AccentText, TextSize = 12, ZIndex = 27}, {corner(7)})
             attachHover(button, theme.Accent, Color3.fromRGB(210, 210, 215))
             button.MouseButton1Click:Connect(function() tween(button, 0.07, {Size = UDim2.fromOffset(88, 29)}); task.delay(0.08, function() if button.Parent then tween(button, 0.12, {Size = UDim2.fromOffset(92, 32)}) end end); safeCall(final.Callback) end)
             return {Fire = function() safeCall(final.Callback) end, Destroy = function() holder:Destroy() end}
@@ -588,7 +608,9 @@ function VelonLib:CreateWindow(options)
 
         function tab:CreateToggle(config)
             config = merge({CurrentValue = false}, config)
-            local holder, _, final = controlBase(config, 56)
+            if config.Subtitle == nil and config.Description == nil then config.Subtitle = "Enable or disable this option" end
+            config.RightSpace = config.RightSpace or 68
+            local holder, _, final = controlBase(config, 62)
             local track = create("TextButton", {Parent = holder, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -14, 0.5, 0), Size = UDim2.fromOffset(42, 24), AutoButtonColor = false, BackgroundColor3 = theme.Surface3, Text = "", ZIndex = 27}, {corner(12)})
             local knob = create("Frame", {Parent = track, AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 4, 0.5, 0), Size = UDim2.fromOffset(16, 16), BackgroundColor3 = theme.Muted, ZIndex = 28}, {corner(8)})
             local control = {Value = final.CurrentValue == true}
@@ -608,8 +630,9 @@ function VelonLib:CreateWindow(options)
 
         function tab:CreateSlider(config)
             config = merge({Range = {0, 100}, Increment = 1, CurrentValue = 0, Suffix = ""}, config)
+            config.RightSpace = config.RightSpace or 100
             local holder, _, final = controlBase(config, 72)
-            local valueLabel = create("TextLabel", {Parent = holder, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 0, 9), Size = UDim2.fromOffset(90, 20), BackgroundTransparency = 1, Font = Enum.Font.GothamMedium, TextColor3 = theme.Muted, TextSize = 10, TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 27})
+            local valueLabel = create("TextLabel", {Parent = holder, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 0, 9), Size = UDim2.fromOffset(90, 20), BackgroundTransparency = 1, Font = Enum.Font.GothamMedium, TextColor3 = theme.Muted, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 27})
             local bar = create("TextButton", {Parent = holder, Position = UDim2.new(0, 14, 1, -20), Size = UDim2.new(1, -28, 0, 6), AutoButtonColor = false, BackgroundColor3 = theme.Surface3, Text = "", ZIndex = 27}, {corner(3)})
             local fill = create("Frame", {Parent = bar, Size = UDim2.fromScale(0, 1), BackgroundColor3 = theme.Accent, BorderSizePixel = 0, ZIndex = 28}, {corner(3)})
             local knob = create("Frame", {Parent = fill, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(1, 0, 0.5, 0), Size = UDim2.fromOffset(12, 12), BackgroundColor3 = theme.Accent, ZIndex = 29}, {corner(6), stroke(theme.Background, 0, 2)})
@@ -642,9 +665,10 @@ function VelonLib:CreateWindow(options)
 
         function tab:CreateInput(config)
             config = merge({CurrentValue = "", Placeholder = "Type here...", RemoveTextAfterFocusLost = false}, config)
-            local holder, _, final = controlBase(config, 58)
-            local boxHolder = create("Frame", {Parent = holder, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -13, 0.5, 0), Size = UDim2.fromOffset(180, 34), BackgroundColor3 = theme.Background, ZIndex = 27}, {corner(7), stroke(theme.Border, 0.2), padding(10, 10, 0, 0)})
-            local box = create("TextBox", {Parent = boxHolder, Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ClearTextOnFocus = false, Font = Enum.Font.Gotham, Text = tostring(final.CurrentValue), PlaceholderText = final.Placeholder, PlaceholderColor3 = theme.Muted, TextColor3 = theme.Text, TextSize = 11, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 28})
+            config.RightSpace = config.RightSpace or 204
+            local holder, _, final = controlBase(config, 62)
+            local boxHolder = create("Frame", {Parent = holder, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -13, 0.5, 0), Size = UDim2.fromOffset(190, 36), BackgroundColor3 = theme.Background, ZIndex = 27}, {corner(7), stroke(theme.Border, 0.58), padding(10, 10, 0, 0)})
+            local box = create("TextBox", {Parent = boxHolder, Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ClearTextOnFocus = false, Font = Enum.Font.Gotham, Text = tostring(final.CurrentValue), PlaceholderText = final.Placeholder, PlaceholderColor3 = theme.Muted, TextColor3 = theme.Text, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 28})
             local control = {Value = tostring(final.CurrentValue)}
             function control:Set(value, silent) self.Value = tostring(value or "") box.Text = self.Value saveFlag(final, self.Value) if not silent then safeCall(final.Callback, self.Value) end end
             function control:Get() return self.Value end
@@ -657,18 +681,19 @@ function VelonLib:CreateWindow(options)
 
         function tab:CreateDropdown(config)
             config = merge({Options = {}, CurrentOption = nil}, config)
-            local holder, _, final = controlBase(config, 58)
-            local selectedButton = create("TextButton", {Parent = holder, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -13, 0, 12), Size = UDim2.fromOffset(180, 34), AutoButtonColor = false, BackgroundColor3 = theme.Background, Font = Enum.Font.Gotham, Text = "", TextColor3 = theme.Text, TextSize = 11, ZIndex = 27}, {corner(7), stroke(theme.Border, 0.2)})
-            local selectedText = create("TextLabel", {Parent = selectedButton, BackgroundTransparency = 1, Position = UDim2.fromOffset(10, 0), Size = UDim2.new(1, -36, 1, 0), Font = Enum.Font.Gotham, TextColor3 = theme.Text, TextSize = 11, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 28})
+            config.RightSpace = config.RightSpace or 204
+            local holder, _, final = controlBase(config, 62)
+            local selectedButton = create("TextButton", {Parent = holder, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -13, 0.5, 0), Size = UDim2.fromOffset(190, 36), AutoButtonColor = false, BackgroundColor3 = theme.Background, Font = Enum.Font.Gotham, Text = "", TextColor3 = theme.Text, TextSize = 12, ZIndex = 27}, {corner(7), stroke(theme.Border, 0.58)})
+            local selectedText = create("TextLabel", {Parent = selectedButton, BackgroundTransparency = 1, Position = UDim2.fromOffset(11, 0), Size = UDim2.new(1, -38, 1, 0), Font = Enum.Font.GothamMedium, TextColor3 = theme.Text, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 28})
             local arrow = makeIcon(selectedButton, "chevron-down", 14, theme.Muted, 28)
             arrow.AnchorPoint, arrow.Position = Vector2.new(1, 0.5), UDim2.new(1, -10, 0.5, 0)
-            local list = create("Frame", {Parent = holder, Position = UDim2.fromOffset(14, 58), Size = UDim2.new(1, -28, 0, 0), BackgroundColor3 = theme.Background, ClipsDescendants = true, Visible = false, ZIndex = 29}, {corner(7), stroke(theme.Border, 0.2), padding(5, 5, 5, 5)})
+            local list = create("ScrollingFrame", {Parent = holder, Position = UDim2.fromOffset(14, 62), Size = UDim2.new(1, -28, 0, 0), BackgroundColor3 = theme.Background, BorderSizePixel = 0, ClipsDescendants = true, Visible = false, AutomaticCanvasSize = Enum.AutomaticSize.Y, CanvasSize = UDim2.new(), ScrollBarThickness = 2, ScrollBarImageColor3 = theme.Muted, ZIndex = 29}, {corner(7), stroke(theme.Border, 0.58), padding(5, 5, 5, 5)})
             create("UIListLayout", {Parent = list, Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder})
             local control = {Value = final.CurrentOption or final.Options[1], Open = false, Options = final.Options}
             local function rebuild()
                 for _, child in ipairs(list:GetChildren()) do if child:IsA("TextButton") then child:Destroy() end end
                 for _, option in ipairs(control.Options) do
-                    local optionButton = create("TextButton", {Parent = list, Size = UDim2.new(1, 0, 0, 28), AutoButtonColor = false, BackgroundColor3 = theme.Surface2, BackgroundTransparency = 1, Font = Enum.Font.Gotham, Text = tostring(option), TextColor3 = theme.Muted, TextSize = 10, ZIndex = 30}, {corner(5)})
+                    local optionButton = create("TextButton", {Parent = list, Size = UDim2.new(1, 0, 0, 32), AutoButtonColor = false, BackgroundColor3 = theme.Surface2, BackgroundTransparency = 1, Font = Enum.Font.GothamMedium, Text = tostring(option), TextColor3 = theme.Muted, TextSize = 12, ZIndex = 30}, {corner(5)})
                     optionButton.MouseEnter:Connect(function() tween(optionButton, 0.12, {BackgroundTransparency = 0, TextColor3 = theme.Text}) end)
                     optionButton.MouseLeave:Connect(function() tween(optionButton, 0.12, {BackgroundTransparency = 1, TextColor3 = theme.Muted}) end)
                     optionButton.MouseButton1Click:Connect(function() control:Set(option) control:SetOpen(false) end)
@@ -678,9 +703,9 @@ function VelonLib:CreateWindow(options)
             function control:Get() return self.Value end
             function control:SetOpen(open)
                 self.Open = open list.Visible = true
-                local listHeight = math.min(#self.Options * 32 + 10, 170)
+                local listHeight = math.min(#self.Options * 36 + 10, 190)
                 tween(arrow, 0.18, {Rotation = open and 180 or 0})
-                tween(holder, 0.22, {Size = UDim2.new(1, -5, 0, open and (68 + listHeight) or 58)})
+                tween(holder, 0.22, {Size = UDim2.new(1, -5, 0, open and (72 + listHeight) or 62)})
                 tween(list, 0.22, {Size = UDim2.new(1, -28, 0, open and listHeight or 0)})
                 if not open then task.delay(0.23, function() if not self.Open then list.Visible = false end end) end
             end
@@ -694,8 +719,9 @@ function VelonLib:CreateWindow(options)
 
         function tab:CreateKeybind(config)
             config = merge({CurrentKeybind = Enum.KeyCode.RightShift}, config)
-            local holder, _, final = controlBase(config, 56)
-            local keyButton = create("TextButton", {Parent = holder, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -13, 0.5, 0), Size = UDim2.fromOffset(105, 32), AutoButtonColor = false, BackgroundColor3 = theme.Background, Font = Enum.Font.GothamMedium, TextColor3 = theme.Text, TextSize = 10, ZIndex = 27}, {corner(7), stroke(theme.Border, 0.2)})
+            config.RightSpace = config.RightSpace or 120
+            local holder, _, final = controlBase(config, 62)
+            local keyButton = create("TextButton", {Parent = holder, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -13, 0.5, 0), Size = UDim2.fromOffset(108, 34), AutoButtonColor = false, BackgroundColor3 = theme.Background, Font = Enum.Font.GothamMedium, TextColor3 = theme.Text, TextSize = 12, ZIndex = 27}, {corner(7), stroke(theme.Border, 0.58)})
             local control = {Value = final.CurrentKeybind, Listening = false}
             function control:Set(value, silent) self.Value = value keyButton.Text = value and value.Name or "None" saveFlag(final, value) if not silent then safeCall(final.ChangedCallback, value) end end
             function control:Get() return self.Value end
@@ -716,9 +742,10 @@ function VelonLib:CreateWindow(options)
 
         function tab:CreateColorPicker(config)
             config = merge({CurrentColor = Color3.new(1, 1, 1)}, config)
-            local holder, _, final = controlBase(config, 56)
-            local swatch = create("TextButton", {Parent = holder, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -13, 0, 12), Size = UDim2.fromOffset(68, 32), AutoButtonColor = false, BackgroundColor3 = final.CurrentColor, Text = "", ZIndex = 27}, {corner(7), stroke(theme.Border, 0.15)})
-            local picker = create("Frame", {Parent = holder, Position = UDim2.fromOffset(14, 58), Size = UDim2.new(1, -28, 0, 142), BackgroundTransparency = 1, Visible = false, ZIndex = 27})
+            config.RightSpace = config.RightSpace or 82
+            local holder, _, final = controlBase(config, 62)
+            local swatch = create("TextButton", {Parent = holder, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -13, 0.5, 0), Size = UDim2.fromOffset(68, 34), AutoButtonColor = false, BackgroundColor3 = final.CurrentColor, Text = "", ZIndex = 27}, {corner(7), stroke(theme.Border, 0.58)})
+            local picker = create("Frame", {Parent = holder, Position = UDim2.fromOffset(14, 64), Size = UDim2.new(1, -28, 0, 142), BackgroundTransparency = 1, Visible = false, ZIndex = 27})
             local sv = create("Frame", {Parent = picker, Size = UDim2.new(1, -48, 1, 0), BackgroundColor3 = Color3.fromHSV(0, 1, 1), ClipsDescendants = true, ZIndex = 28}, {corner(7)})
             local white = create("Frame", {Parent = sv, Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0, ZIndex = 29})
             create("UIGradient", {Parent = white, Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(1, 1)})})
@@ -738,7 +765,7 @@ function VelonLib:CreateWindow(options)
                 saveFlag(final, value) if not silent then safeCall(final.Callback, value) end
             end
             function control:Get() return self.Value end
-            function control:SetOpen(open) self.Open = open picker.Visible = true tween(holder, 0.22, {Size = UDim2.new(1, -5, 0, open and 214 or 56)}) if not open then task.delay(0.23, function() if not self.Open then picker.Visible = false end end) end end
+            function control:SetOpen(open) self.Open = open picker.Visible = true tween(holder, 0.22, {Size = UDim2.new(1, -5, 0, open and 220 or 62)}) if not open then task.delay(0.23, function() if not self.Open then picker.Visible = false end end) end end
             function control:Destroy() holder:Destroy() end
             swatch.MouseButton1Click:Connect(function() control:SetOpen(not control.Open) end)
             local draggingSV, draggingHue = false, false
@@ -1002,18 +1029,18 @@ function VelonLib:CreateWindow(options)
 
             if config.Controls ~= false then
                 local prefix = config.FlagPrefix
-                tab:CreateSection(config.SectionName or "ESP Renderer")
-                tab:CreateToggle({Name = "ESP Enabled", Description = "Hard gate for every ESP feature", Flag = prefix .. "Enabled", CurrentValue = settings.Enabled, Callback = function(value) controller:SetEnabled(value) end})
-                tab:CreateSlider({Name = "Max Distance", Flag = prefix .. "MaxDistance", Range = {100, 15000}, Increment = 100, CurrentValue = settings.MaxDistance, Suffix = " studs", Callback = function(value) settings.MaxDistance = value end})
-                tab:CreateToggle({Name = "Team Check", Flag = prefix .. "TeamCheck", CurrentValue = settings.TeamCheck, Callback = function(value) settings.TeamCheck = value end})
-                tab:CreateToggle({Name = "Boxes", Flag = prefix .. "Boxes", CurrentValue = settings.Boxes, Callback = function(value) settings.Boxes = value end})
-                tab:CreateToggle({Name = "Names", Flag = prefix .. "Names", CurrentValue = settings.Names, Callback = function(value) settings.Names = value end})
-                tab:CreateToggle({Name = "Distance", Flag = prefix .. "Distance", CurrentValue = settings.Distance, Callback = function(value) settings.Distance = value end})
-                tab:CreateToggle({Name = "Health Bar", Flag = prefix .. "HealthBar", CurrentValue = settings.HealthBar, Callback = function(value) settings.HealthBar = value end})
-                tab:CreateToggle({Name = "Tracers", Flag = prefix .. "Tracers", CurrentValue = settings.Tracers, Callback = function(value) settings.Tracers = value end})
-                tab:CreateToggle({Name = "Skeleton", Flag = prefix .. "Skeleton", CurrentValue = settings.Skeleton, Callback = function(value) settings.Skeleton = value end})
-                tab:CreateToggle({Name = "Chams", Flag = prefix .. "Chams", CurrentValue = settings.Chams, Callback = function(value) settings.Chams = value end})
-                tab:CreateSlider({Name = "Line Thickness", Flag = prefix .. "Thickness", Range = {1, 4}, Increment = 1, CurrentValue = settings.Thickness, Callback = function(value) settings.Thickness = value end})
+                tab:CreateHeader({Title = config.SectionName or "ESP Renderer", Subtitle = "Configure how players appear on screen", Icon = "eye"})
+                tab:CreateToggle({Title = "ESP Enabled", Subtitle = "Master switch for every ESP feature", Flag = prefix .. "Enabled", CurrentValue = settings.Enabled, Callback = function(value) controller:SetEnabled(value) end})
+                tab:CreateSlider({Title = "Max Distance", Subtitle = "Ignore players outside this range", Flag = prefix .. "MaxDistance", Range = {100, 15000}, Increment = 100, CurrentValue = settings.MaxDistance, Suffix = " studs", Callback = function(value) settings.MaxDistance = value end})
+                tab:CreateToggle({Title = "Team Check", Subtitle = "Hide players on your team", Flag = prefix .. "TeamCheck", CurrentValue = settings.TeamCheck, Callback = function(value) settings.TeamCheck = value end})
+                tab:CreateToggle({Title = "Boxes", Subtitle = "Draw a box around each player", Flag = prefix .. "Boxes", CurrentValue = settings.Boxes, Callback = function(value) settings.Boxes = value end})
+                tab:CreateToggle({Title = "Names", Subtitle = "Show player display names", Flag = prefix .. "Names", CurrentValue = settings.Names, Callback = function(value) settings.Names = value end})
+                tab:CreateToggle({Title = "Distance", Subtitle = "Show distance in studs", Flag = prefix .. "Distance", CurrentValue = settings.Distance, Callback = function(value) settings.Distance = value end})
+                tab:CreateToggle({Title = "Health Bar", Subtitle = "Show current player health", Flag = prefix .. "HealthBar", CurrentValue = settings.HealthBar, Callback = function(value) settings.HealthBar = value end})
+                tab:CreateToggle({Title = "Tracers", Subtitle = "Draw lines from the screen bottom", Flag = prefix .. "Tracers", CurrentValue = settings.Tracers, Callback = function(value) settings.Tracers = value end})
+                tab:CreateToggle({Title = "Skeleton", Subtitle = "Draw character rig connections", Flag = prefix .. "Skeleton", CurrentValue = settings.Skeleton, Callback = function(value) settings.Skeleton = value end})
+                tab:CreateToggle({Title = "Chams", Subtitle = "Highlight characters through walls", Flag = prefix .. "Chams", CurrentValue = settings.Chams, Callback = function(value) settings.Chams = value end})
+                tab:CreateSlider({Title = "Line Thickness", Subtitle = "Adjust ESP line width", Flag = prefix .. "Thickness", Range = {1, 4}, Increment = 1, CurrentValue = settings.Thickness, Callback = function(value) settings.Thickness = value end})
                 tab:CreateColorPicker({Name = "Box Color", Flag = prefix .. "BoxColor", CurrentColor = settings.BoxColor, Callback = function(value) settings.BoxColor = value end})
                 tab:CreateColorPicker({Name = "Text Color", Flag = prefix .. "TextColor", CurrentColor = settings.TextColor, Callback = function(value) settings.TextColor = value end})
                 tab:CreateColorPicker({Name = "Skeleton Color", Flag = prefix .. "SkeletonColor", CurrentColor = settings.SkeletonColor, Callback = function(value) settings.SkeletonColor = value end})
