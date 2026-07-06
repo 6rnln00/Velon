@@ -369,7 +369,7 @@ function VelonLib:CreateWindow(options)
         Link = "", ToggleKey = Enum.KeyCode.RightShift,
         MainTab = {Name = "Main", Icon = "home"},
         Splash = {Enabled = true, Duration = 1.6, Text = "VelonLib"},
-        Theme = {}, Width = 760, Height = 480,
+        Theme = {}, Width = 820, Height = 520,
     }, options)
     local theme = merge(COLORS, options.Theme)
     local gui = makeScreenGui("VelonLib_UI", 60)
@@ -683,7 +683,7 @@ function VelonLib:CreateWindow(options)
             config = merge({Options = {}, CurrentOption = nil}, config)
             config.RightSpace = config.RightSpace or 204
             local holder, _, final = controlBase(config, 62)
-            local selectedButton = create("TextButton", {Parent = holder, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -13, 0.5, 0), Size = UDim2.fromOffset(190, 36), AutoButtonColor = false, BackgroundColor3 = theme.Background, Font = Enum.Font.Gotham, Text = "", TextColor3 = theme.Text, TextSize = 12, ZIndex = 27}, {corner(7), stroke(theme.Border, 0.58)})
+            local selectedButton = create("TextButton", {Parent = holder, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -13, 0, 13), Size = UDim2.fromOffset(190, 36), AutoButtonColor = false, BackgroundColor3 = theme.Background, Font = Enum.Font.Gotham, Text = "", TextColor3 = theme.Text, TextSize = 12, ZIndex = 27}, {corner(7), stroke(theme.Border, 0.58)})
             local selectedText = create("TextLabel", {Parent = selectedButton, BackgroundTransparency = 1, Position = UDim2.fromOffset(11, 0), Size = UDim2.new(1, -38, 1, 0), Font = Enum.Font.GothamMedium, TextColor3 = theme.Text, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 28})
             local arrow = makeIcon(selectedButton, "chevron-down", 14, theme.Muted, 28)
             arrow.AnchorPoint, arrow.Position = Vector2.new(1, 0.5), UDim2.new(1, -10, 0.5, 0)
@@ -744,15 +744,15 @@ function VelonLib:CreateWindow(options)
             config = merge({CurrentColor = Color3.new(1, 1, 1)}, config)
             config.RightSpace = config.RightSpace or 82
             local holder, _, final = controlBase(config, 62)
-            local swatch = create("TextButton", {Parent = holder, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -13, 0.5, 0), Size = UDim2.fromOffset(68, 34), AutoButtonColor = false, BackgroundColor3 = final.CurrentColor, Text = "", ZIndex = 27}, {corner(7), stroke(theme.Border, 0.58)})
+            local swatch = create("TextButton", {Parent = holder, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -13, 0, 14), Size = UDim2.fromOffset(68, 34), AutoButtonColor = false, BackgroundColor3 = final.CurrentColor, Text = "", ZIndex = 27}, {corner(7), stroke(theme.Border, 0.58)})
             local picker = create("Frame", {Parent = holder, Position = UDim2.fromOffset(14, 64), Size = UDim2.new(1, -28, 0, 142), BackgroundTransparency = 1, Visible = false, ZIndex = 27})
-            local sv = create("Frame", {Parent = picker, Size = UDim2.new(1, -48, 1, 0), BackgroundColor3 = Color3.fromHSV(0, 1, 1), ClipsDescendants = true, ZIndex = 28}, {corner(7)})
+            local sv = create("Frame", {Parent = picker, Size = UDim2.new(1, -48, 1, 0), BackgroundColor3 = Color3.fromHSV(0, 1, 1), Active = true, ClipsDescendants = true, ZIndex = 28}, {corner(7)})
             local white = create("Frame", {Parent = sv, Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0, ZIndex = 29})
             create("UIGradient", {Parent = white, Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(1, 1)})})
             local black = create("Frame", {Parent = sv, Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(0, 0, 0), BorderSizePixel = 0, ZIndex = 30})
             create("UIGradient", {Parent = black, Rotation = 90, Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(1, 0)})})
             local cursor = create("Frame", {Parent = sv, AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.fromOffset(10, 10), BackgroundTransparency = 1, ZIndex = 32}, {corner(5), stroke(Color3.new(1, 1, 1), 0, 2)})
-            local hue = create("Frame", {Parent = picker, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 0, 0, 0), Size = UDim2.fromOffset(34, 142), BackgroundColor3 = Color3.new(1, 1, 1), ClipsDescendants = true, ZIndex = 28}, {corner(7)})
+            local hue = create("Frame", {Parent = picker, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, 0, 0, 0), Size = UDim2.fromOffset(34, 142), BackgroundColor3 = Color3.new(1, 1, 1), Active = true, ClipsDescendants = true, ZIndex = 28}, {corner(7)})
             create("UIGradient", {Parent = hue, Rotation = 90, Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromHSV(0,1,1)), ColorSequenceKeypoint.new(0.17, Color3.fromHSV(0.17,1,1)), ColorSequenceKeypoint.new(0.33, Color3.fromHSV(0.33,1,1)), ColorSequenceKeypoint.new(0.5, Color3.fromHSV(0.5,1,1)), ColorSequenceKeypoint.new(0.67, Color3.fromHSV(0.67,1,1)), ColorSequenceKeypoint.new(0.83, Color3.fromHSV(0.83,1,1)), ColorSequenceKeypoint.new(1, Color3.fromHSV(1,1,1))})})
             local hueCursor = create("Frame", {Parent = hue, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0), Size = UDim2.new(1, -4, 0, 4), BackgroundColor3 = Color3.new(1,1,1), ZIndex = 31}, {corner(2), stroke(Color3.new(0,0,0), 0.4)})
             local h, s, v = Color3.toHSV(final.CurrentColor)
@@ -761,7 +761,8 @@ function VelonLib:CreateWindow(options)
                 if typeof(value) ~= "Color3" then return end
                 self.Value = value h, s, v = Color3.toHSV(value)
                 swatch.BackgroundColor3, sv.BackgroundColor3 = value, Color3.fromHSV(h, 1, 1)
-                cursor.Position, hueCursor.Position = UDim2.fromScale(s, 1-v), UDim2.fromScale(0.5, h)
+                cursor.Position = UDim2.fromScale(math.clamp(s, 0.02, 0.98), math.clamp(1-v, 0.035, 0.965))
+                hueCursor.Position = UDim2.fromScale(0.5, math.clamp(h, 0.025, 0.975))
                 saveFlag(final, value) if not silent then safeCall(final.Callback, value) end
             end
             function control:Get() return self.Value end
