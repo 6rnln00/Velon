@@ -267,38 +267,35 @@ function VelonLib:ShowSplash(options)
     }, options)
     if options.Enabled == false then return end
     local gui = makeScreenGui("VelonLib_Splash", 110)
-    local background = create("CanvasGroup", {
-        Parent = gui, Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(5, 5, 6),
-        BackgroundTransparency = 0.08, GroupTransparency = 1,
-    })
-    local holder = create("Frame", {
-        Parent = background, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
-        Size = UDim2.fromOffset(360, 170), BackgroundTransparency = 1,
-    })
-    bindResponsiveScale(gui, holder, 400, 210)
-    local icon = makeIcon(holder, options.Icon, 50, COLORS.Text, 3)
-    icon.AnchorPoint, icon.Position = Vector2.new(0.5, 0.5), UDim2.fromScale(0.5, 0.34)
+    local holder = create("CanvasGroup", {
+        Parent = gui, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.53),
+        Size = UDim2.fromOffset(820, 520), BackgroundColor3 = COLORS.Background,
+        GroupTransparency = 1, ZIndex = 20,
+    }, {corner(14)})
+    bindResponsiveScale(gui, holder, 844, 544)
+    local icon = makeIcon(holder, options.Icon, 42, COLORS.Text, 21)
+    icon.AnchorPoint, icon.Position = Vector2.new(0.5, 0.5), UDim2.fromScale(0.5, 0.45)
     local title = create("TextLabel", {
-        Parent = holder, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0.58),
-        Size = UDim2.fromOffset(320, 28), BackgroundTransparency = 1,
-        Font = Enum.Font.GothamBold, Text = options.Title, TextColor3 = COLORS.Text, TextSize = 20,
+        Parent = holder, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0.55),
+        Size = UDim2.fromOffset(360, 28), BackgroundTransparency = 1,
+        Font = Enum.Font.GothamBold, Text = options.Title, TextColor3 = COLORS.Text, TextSize = 18, ZIndex = 21,
     })
     local subtitle = create("TextLabel", {
-        Parent = holder, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0.77),
-        Size = UDim2.fromOffset(320, 22), BackgroundTransparency = 1,
-        Font = Enum.Font.Gotham, Text = options.Subtitle, TextColor3 = COLORS.Muted, TextSize = 12,
+        Parent = holder, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0.62),
+        Size = UDim2.fromOffset(360, 22), BackgroundTransparency = 1,
+        Font = Enum.Font.Gotham, Text = options.Subtitle, TextColor3 = COLORS.Muted, TextSize = 12, ZIndex = 21,
     })
     icon.Size = UDim2.fromOffset(28, 28)
     title.TextTransparency, subtitle.TextTransparency = 1, 1
-    tween(background, 0.3, {GroupTransparency = 0})
-    tween(icon, 0.55, {Size = UDim2.fromOffset(50, 50), Rotation = 360}, Enum.EasingStyle.Back)
+    tween(holder, 0.42, {GroupTransparency = 0, Position = UDim2.fromScale(0.5, 0.5)}, Enum.EasingStyle.Quart)
+    tween(icon, 0.55, {Size = UDim2.fromOffset(42, 42), Rotation = 360}, Enum.EasingStyle.Back)
     tween(title, 0.38, {TextTransparency = 0})
     tween(subtitle, 0.46, {TextTransparency = 0})
     task.wait(math.max(tonumber(options.Duration) or 1.5, 0.3))
     if gui.Parent then
-        tween(background, 0.32, {GroupTransparency = 1})
-        tween(icon, 0.32, {Size = UDim2.fromOffset(64, 64)})
-        task.wait(0.34)
+        tween(holder, 0.35, {GroupTransparency = 1, Position = UDim2.fromScale(0.5, 0.47)})
+        tween(icon, 0.35, {Size = UDim2.fromOffset(58, 58)})
+        task.wait(0.37)
         gui:Destroy()
     end
 end
@@ -486,7 +483,7 @@ function VelonLib:CreateWindow(options)
     local root = create("CanvasGroup", {
         Parent = gui, Name = "Window", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
         Size = UDim2.fromOffset(options.Width, options.Height), BackgroundColor3 = theme.Background,
-        GroupTransparency = 1, ZIndex = 20, ClipsDescendants = false,
+        GroupTransparency = 1, ZIndex = 20,
     }, {corner(14)})
     local scale = bindResponsiveScale(gui, root, options.Width + 24, options.Height + 24)
     window.Root, window.Scale, window.Overlay = root, scale, overlay
@@ -566,6 +563,7 @@ function VelonLib:CreateWindow(options)
     function window:SetVisible(visible)
         if self.Destroyed then return end
         self.Visible = visible
+        if setTabPreviews then setTabPreviews(self.SelectedTab, visible) end
         if visible then
             root.Visible = true
             root.GroupTransparency = 1
@@ -621,7 +619,7 @@ function VelonLib:CreateWindow(options)
 
     setTabPreviews = function(tab, visible)
         if not tab or not tab.PreviewPanels then return end
-        visible = visible and not window.Minimized and not window.SplashActive
+        visible = visible and window.Visible and not window.Minimized and not window.SplashActive
         for _, panel in ipairs(tab.PreviewPanels) do
             if panel and panel.Parent then
                 local token = (panel:GetAttribute("VelonPreviewToken") or 0) + 1
@@ -629,10 +627,9 @@ function VelonLib:CreateWindow(options)
                 if visible then
                     panel.Visible = true
                     panel.GroupTransparency = 1
-                    panel.Position = UDim2.new(1, 26, 0, 0)
-                    tween(panel, 0.24, {GroupTransparency = 0, Position = UDim2.new(1, 12, 0, 0)}, Enum.EasingStyle.Quart)
+                    tween(panel, 0.24, {GroupTransparency = 0}, Enum.EasingStyle.Quart)
                 else
-                    tween(panel, 0.18, {GroupTransparency = 1, Position = UDim2.new(1, 24, 0, 0)})
+                    tween(panel, 0.18, {GroupTransparency = 1})
                     task.delay(0.19, function()
                         if panel.Parent and panel:GetAttribute("VelonPreviewToken") == token then panel.Visible = false end
                     end)
@@ -1011,10 +1008,24 @@ function VelonLib:CreateWindow(options)
 
             local function createPreview()
                 local card = create("CanvasGroup", {
-                    Parent = root, Position = UDim2.new(1, 24, 0, 0), Size = UDim2.fromOffset(280, options.Height),
+                    Parent = gui, Position = UDim2.fromOffset(0, 0), Size = UDim2.fromOffset(280, options.Height),
                     BackgroundColor3 = theme.Surface, GroupTransparency = 1,
-                    ClipsDescendants = true, Visible = false, ZIndex = 25,
+                    Visible = false, ZIndex = 25,
                 }, {corner(10), stroke(theme.Border, 0.58)})
+                local previewScale = create("UIScale", {Parent = card, Scale = scale.Scale})
+                local function syncPreviewPosition()
+                    if not card.Parent or not root.Parent then return end
+                    previewScale.Scale = scale.Scale
+                    local camera = workspace.CurrentCamera
+                    local viewport = camera and camera.ViewportSize or Vector2.new(1920, 1080)
+                    local panelWidth = 280 * scale.Scale
+                    local panelHeight = options.Height * scale.Scale
+                    local positionX = root.AbsolutePosition.X + root.AbsoluteSize.X + (12 * scale.Scale)
+                    local positionY = root.AbsolutePosition.Y
+                    positionX = math.clamp(positionX, 8, math.max(8, viewport.X - panelWidth - 8))
+                    positionY = math.clamp(positionY, 8, math.max(8, viewport.Y - panelHeight - 8))
+                    card.Position = UDim2.fromOffset(positionX, positionY)
+                end
                 create("TextLabel", {
                     Parent = card, BackgroundTransparency = 1, Position = UDim2.fromOffset(14, 8),
                     Size = UDim2.new(1, -120, 0, 28), Font = Enum.Font.GothamSemibold,
@@ -1068,9 +1079,13 @@ function VelonLib:CreateWindow(options)
                     Name = nameLabel, Distance = distanceLabel,
                     HealthBack = healthBack, HealthFill = healthFill,
                     Box = boxLines, Skeleton = skeletonLines, Tracer = tracer,
-                    Token = 0,
+                    Scale = previewScale, Token = 0,
                 }
                 table.insert(tab.PreviewPanels, card)
+                table.insert(controller.Connections, root:GetPropertyChangedSignal("AbsolutePosition"):Connect(syncPreviewPosition))
+                table.insert(controller.Connections, root:GetPropertyChangedSignal("AbsoluteSize"):Connect(syncPreviewPosition))
+                table.insert(controller.Connections, scale:GetPropertyChangedSignal("Scale"):Connect(syncPreviewPosition))
+                syncPreviewPosition()
 
                 function controller:RefreshPreview()
                     local preview = self.Preview
