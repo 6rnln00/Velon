@@ -879,6 +879,7 @@ function VelonLib:CreateWindow(options)
                 FlagPrefix = "ESP_",
                 Controls = true,
                 Settings = {},
+                PreviewPlayer = LocalPlayer,
             }, config)
             local settings = merge({
                 Enabled = false,
@@ -906,7 +907,173 @@ function VelonLib:CreateWindow(options)
                 Objects = {},
                 Connections = {},
                 Destroyed = false,
+                Preview = nil,
             }
+
+            local function createPreview()
+                local card = create("Frame", {
+                    Parent = scroll, Size = UDim2.new(1, -5, 0, 306),
+                    BackgroundColor3 = theme.Surface, ClipsDescendants = true, ZIndex = 25,
+                }, {corner(10), stroke(theme.Border, 0.58)})
+                create("TextLabel", {
+                    Parent = card, BackgroundTransparency = 1, Position = UDim2.fromOffset(14, 8),
+                    Size = UDim2.new(1, -120, 0, 28), Font = Enum.Font.GothamSemibold,
+                    Text = "Character Preview", TextColor3 = theme.Text, TextSize = 14,
+                    TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 27,
+                })
+                local badge = create("TextLabel", {
+                    Parent = card, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 0, 10),
+                    Size = UDim2.fromOffset(82, 24), BackgroundColor3 = theme.Surface3,
+                    Font = Enum.Font.GothamBold, Text = "PREVIEW", TextColor3 = theme.Muted,
+                    TextSize = 10, ZIndex = 27,
+                }, {corner(6)})
+                local stage = create("Frame", {
+                    Parent = card, Position = UDim2.fromOffset(14, 43), Size = UDim2.new(1, -28, 0, 248),
+                    BackgroundColor3 = theme.Background, ClipsDescendants = true, ZIndex = 26,
+                }, {corner(8)})
+                local avatar = create("ImageLabel", {
+                    Parent = stage, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.53),
+                    Size = UDim2.fromOffset(190, 220), BackgroundTransparency = 1,
+                    ScaleType = Enum.ScaleType.Fit, ZIndex = 27,
+                })
+                local nameLabel = create("TextLabel", {
+                    Parent = stage, AnchorPoint = Vector2.new(0.5, 1), BackgroundTransparency = 1,
+                    Font = Enum.Font.GothamSemibold, Text = "PLAYER", TextColor3 = settings.TextColor,
+                    TextSize = 12, TextStrokeColor3 = Color3.new(0, 0, 0), TextStrokeTransparency = 0.25,
+                    Visible = false, ZIndex = 34,
+                })
+                local distanceLabel = create("TextLabel", {
+                    Parent = stage, AnchorPoint = Vector2.new(0.5, 0), BackgroundTransparency = 1,
+                    Font = Enum.Font.GothamMedium, Text = "125 studs", TextColor3 = settings.TextColor,
+                    TextSize = 11, TextStrokeColor3 = Color3.new(0, 0, 0), TextStrokeTransparency = 0.25,
+                    Visible = false, ZIndex = 34,
+                })
+                local healthBack = create("Frame", {
+                    Parent = stage, AnchorPoint = Vector2.new(1, 0), BackgroundColor3 = Color3.fromRGB(12, 12, 12),
+                    BorderSizePixel = 0, Visible = false, ZIndex = 32,
+                }, {corner(2)})
+                local healthFill = create("Frame", {
+                    Parent = healthBack, AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromScale(0, 1),
+                    Size = UDim2.fromScale(1, 0.72), BackgroundColor3 = Color3.fromRGB(90, 255, 110),
+                    BorderSizePixel = 0, ZIndex = 33,
+                }, {corner(2)})
+                local boxLines = {}
+                local skeletonLines = {}
+                for _ = 1, 4 do table.insert(boxLines, makeLine(stage, settings.BoxColor, settings.Thickness, 33)) end
+                for _ = 1, 14 do table.insert(skeletonLines, makeLine(stage, settings.SkeletonColor, settings.Thickness, 33)) end
+                local tracer = makeLine(stage, settings.TracerColor, settings.Thickness, 32)
+
+                controller.Preview = {
+                    Root = card, Stage = stage, Avatar = avatar, Badge = badge,
+                    Name = nameLabel, Distance = distanceLabel,
+                    HealthBack = healthBack, HealthFill = healthFill,
+                    Box = boxLines, Skeleton = skeletonLines, Tracer = tracer,
+                    Token = 0,
+                }
+
+                function controller:RefreshPreview()
+                    local preview = self.Preview
+                    if self.Destroyed or not preview or not preview.Root.Parent then return end
+                    local size = preview.Stage.AbsoluteSize
+                    if size.X <= 0 or size.Y <= 0 then return end
+                    local centerX = size.X / 2
+                    local top = size.Y * 0.105
+                    local bottom = size.Y * 0.91
+                    local height = bottom - top
+                    local width = math.min(height * 0.47, size.X * 0.34)
+                    local left, right = centerX - width / 2, centerX + width / 2
+                    local boxPoints = {
+                        {Vector2.new(left, top), Vector2.new(right, top)},
+                        {Vector2.new(right, top), Vector2.new(right, bottom)},
+                        {Vector2.new(right, bottom), Vector2.new(left, bottom)},
+                        {Vector2.new(left, bottom), Vector2.new(left, top)},
+                    }
+                    for index, line in ipairs(preview.Box) do
+                        line.BackgroundColor3 = settings.BoxColor
+                        setLine(line, boxPoints[index][1], boxPoints[index][2], settings.Thickness, settings.Boxes)
+                    end
+
+                    preview.Name.TextColor3 = settings.TextColor
+                    preview.Name.TextSize = math.max(settings.TextSize, 11)
+                    preview.Name.Position = UDim2.fromOffset(centerX, top - 4)
+                    preview.Name.Size = UDim2.fromOffset(width + 80, 18)
+                    preview.Name.Visible = settings.Names
+                    preview.Distance.TextColor3 = settings.TextColor
+                    preview.Distance.TextSize = math.max(settings.TextSize - 1, 10)
+                    preview.Distance.Position = UDim2.fromOffset(centerX, bottom + 4)
+                    preview.Distance.Size = UDim2.fromOffset(width + 80, 18)
+                    preview.Distance.Visible = settings.Distance
+                    preview.HealthBack.Position = UDim2.fromOffset(left - 7, top)
+                    preview.HealthBack.Size = UDim2.fromOffset(4, height)
+                    preview.HealthBack.Visible = settings.HealthBar
+                    preview.Tracer.BackgroundColor3 = settings.TracerColor
+                    setLine(preview.Tracer, Vector2.new(size.X / 2, size.Y), Vector2.new(centerX, bottom), settings.Thickness, settings.Tracers)
+
+                    local nodes = {
+                        Head = Vector2.new(centerX, top + height * 0.12),
+                        Neck = Vector2.new(centerX, top + height * 0.24),
+                        Chest = Vector2.new(centerX, top + height * 0.37),
+                        Pelvis = Vector2.new(centerX, top + height * 0.56),
+                        LShoulder = Vector2.new(centerX - width * 0.24, top + height * 0.29),
+                        LElbow = Vector2.new(centerX - width * 0.37, top + height * 0.46),
+                        LHand = Vector2.new(centerX - width * 0.42, top + height * 0.63),
+                        RShoulder = Vector2.new(centerX + width * 0.24, top + height * 0.29),
+                        RElbow = Vector2.new(centerX + width * 0.37, top + height * 0.46),
+                        RHand = Vector2.new(centerX + width * 0.42, top + height * 0.63),
+                        LKnee = Vector2.new(centerX - width * 0.18, top + height * 0.76),
+                        LFoot = Vector2.new(centerX - width * 0.24, top + height * 0.96),
+                        RKnee = Vector2.new(centerX + width * 0.18, top + height * 0.76),
+                        RFoot = Vector2.new(centerX + width * 0.24, top + height * 0.96),
+                    }
+                    local skeletonPairs = {
+                        {nodes.Head, nodes.Neck}, {nodes.Neck, nodes.Chest}, {nodes.Chest, nodes.Pelvis},
+                        {nodes.Neck, nodes.LShoulder}, {nodes.LShoulder, nodes.LElbow}, {nodes.LElbow, nodes.LHand},
+                        {nodes.Neck, nodes.RShoulder}, {nodes.RShoulder, nodes.RElbow}, {nodes.RElbow, nodes.RHand},
+                        {nodes.Pelvis, nodes.LKnee}, {nodes.LKnee, nodes.LFoot},
+                        {nodes.Pelvis, nodes.RKnee}, {nodes.RKnee, nodes.RFoot},
+                    }
+                    for index, line in ipairs(preview.Skeleton) do
+                        local pair = skeletonPairs[index]
+                        line.BackgroundColor3 = settings.SkeletonColor
+                        setLine(line, pair and pair[1] or Vector2.zero, pair and pair[2] or Vector2.zero, settings.Thickness, settings.Skeleton and pair ~= nil)
+                    end
+                    preview.Avatar.ImageColor3 = settings.Chams and settings.ChamsColor or Color3.new(1, 1, 1)
+                    preview.Avatar.ImageTransparency = settings.Chams and 0.08 or 0
+                    preview.Badge.Text = settings.Enabled and "ESP ON" or "PREVIEW"
+                    preview.Badge.TextColor3 = settings.Enabled and theme.Success or theme.Muted
+                end
+
+                function controller:SetPreviewPlayer(playerOrUserId)
+                    local preview = self.Preview
+                    if self.Destroyed or not preview then return end
+                    local userId
+                    local displayName = "PLAYER"
+                    if typeof(playerOrUserId) == "Instance" and playerOrUserId:IsA("Player") then
+                        userId = playerOrUserId.UserId
+                        displayName = playerOrUserId.DisplayName
+                    else
+                        userId = tonumber(playerOrUserId)
+                    end
+                    if not userId then return end
+                    preview.Token = preview.Token + 1
+                    local token = preview.Token
+                    preview.Name.Text = displayName
+                    task.spawn(function()
+                        local ok, image = pcall(function()
+                            return Players:GetUserThumbnailAsync(userId, Enum.ThumbnailType.AvatarThumbnail, Enum.ThumbnailSize.Size420x420)
+                        end)
+                        if ok and not self.Destroyed and self.Preview == preview and preview.Token == token then
+                            preview.Avatar.Image = image
+                        end
+                    end)
+                end
+
+                table.insert(controller.Connections, stage:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+                    controller:RefreshPreview()
+                end))
+                controller:SetPreviewPlayer(config.PreviewPlayer or LocalPlayer)
+                task.defer(function() controller:RefreshPreview() end)
+            end
 
             local function hideVisual(visual)
                 for _, line in ipairs(visual.Box) do line.Visible = false end
@@ -1086,12 +1253,14 @@ function VelonLib:CreateWindow(options)
                 if not settings.Enabled then
                     for _, visual in pairs(self.Objects) do hideVisual(visual) end
                 end
+                if self.RefreshPreview then self:RefreshPreview() end
             end
 
             function controller:Set(key, value)
                 if settings[key] == nil then error("Unknown ESP setting: " .. tostring(key), 2) end
                 settings[key] = value
                 if key == "Enabled" then self:SetEnabled(value) end
+                if key ~= "Enabled" and self.RefreshPreview then self:RefreshPreview() end
             end
 
             function controller:Get(key) return settings[key] end
@@ -1103,6 +1272,8 @@ function VelonLib:CreateWindow(options)
                 local playersToRemove = {}
                 for player in pairs(self.Objects) do table.insert(playersToRemove, player) end
                 for _, player in ipairs(playersToRemove) do removeVisual(player) end
+                if self.Preview and self.Preview.Root then self.Preview.Root:Destroy() end
+                self.Preview = nil
             end
 
             table.insert(controller.Connections, Players.PlayerRemoving:Connect(removeVisual))
@@ -1124,22 +1295,23 @@ function VelonLib:CreateWindow(options)
             if config.Controls ~= false then
                 local prefix = config.FlagPrefix
                 tab:CreateHeader({Title = config.SectionName or "ESP Renderer", Subtitle = "Configure how players appear on screen", Icon = "eye"})
+                createPreview()
                 tab:CreateToggle({Title = "ESP Enabled", Subtitle = "Master switch for every ESP feature", Flag = prefix .. "Enabled", CurrentValue = settings.Enabled, Callback = function(value) controller:SetEnabled(value) end})
-                tab:CreateSlider({Title = "Max Distance", Subtitle = "Ignore players outside this range", Flag = prefix .. "MaxDistance", Range = {100, 15000}, Increment = 100, CurrentValue = settings.MaxDistance, Suffix = " studs", Callback = function(value) settings.MaxDistance = value end})
-                tab:CreateToggle({Title = "Team Check", Subtitle = "Hide players on your team", Flag = prefix .. "TeamCheck", CurrentValue = settings.TeamCheck, Callback = function(value) settings.TeamCheck = value end})
-                tab:CreateToggle({Title = "Boxes", Subtitle = "Draw a box around each player", Flag = prefix .. "Boxes", CurrentValue = settings.Boxes, Callback = function(value) settings.Boxes = value end})
-                tab:CreateToggle({Title = "Names", Subtitle = "Show player display names", Flag = prefix .. "Names", CurrentValue = settings.Names, Callback = function(value) settings.Names = value end})
-                tab:CreateToggle({Title = "Distance", Subtitle = "Show distance in studs", Flag = prefix .. "Distance", CurrentValue = settings.Distance, Callback = function(value) settings.Distance = value end})
-                tab:CreateToggle({Title = "Health Bar", Subtitle = "Show current player health", Flag = prefix .. "HealthBar", CurrentValue = settings.HealthBar, Callback = function(value) settings.HealthBar = value end})
-                tab:CreateToggle({Title = "Tracers", Subtitle = "Draw lines from the screen bottom", Flag = prefix .. "Tracers", CurrentValue = settings.Tracers, Callback = function(value) settings.Tracers = value end})
-                tab:CreateToggle({Title = "Skeleton", Subtitle = "Draw character rig connections", Flag = prefix .. "Skeleton", CurrentValue = settings.Skeleton, Callback = function(value) settings.Skeleton = value end})
-                tab:CreateToggle({Title = "Chams", Subtitle = "Highlight characters through walls", Flag = prefix .. "Chams", CurrentValue = settings.Chams, Callback = function(value) settings.Chams = value end})
-                tab:CreateSlider({Title = "Line Thickness", Subtitle = "Adjust ESP line width", Flag = prefix .. "Thickness", Range = {1, 4}, Increment = 1, CurrentValue = settings.Thickness, Callback = function(value) settings.Thickness = value end})
-                tab:CreateColorPicker({Name = "Box Color", Flag = prefix .. "BoxColor", CurrentColor = settings.BoxColor, Callback = function(value) settings.BoxColor = value end})
-                tab:CreateColorPicker({Name = "Text Color", Flag = prefix .. "TextColor", CurrentColor = settings.TextColor, Callback = function(value) settings.TextColor = value end})
-                tab:CreateColorPicker({Name = "Skeleton Color", Flag = prefix .. "SkeletonColor", CurrentColor = settings.SkeletonColor, Callback = function(value) settings.SkeletonColor = value end})
-                tab:CreateColorPicker({Name = "Tracer Color", Flag = prefix .. "TracerColor", CurrentColor = settings.TracerColor, Callback = function(value) settings.TracerColor = value end})
-                tab:CreateColorPicker({Name = "Chams Color", Flag = prefix .. "ChamsColor", CurrentColor = settings.ChamsColor, Callback = function(value) settings.ChamsColor = value end})
+                tab:CreateSlider({Title = "Max Distance", Subtitle = "Ignore players outside this range", Flag = prefix .. "MaxDistance", Range = {100, 15000}, Increment = 100, CurrentValue = settings.MaxDistance, Suffix = " studs", Callback = function(value) controller:Set("MaxDistance", value) end})
+                tab:CreateToggle({Title = "Team Check", Subtitle = "Hide players on your team", Flag = prefix .. "TeamCheck", CurrentValue = settings.TeamCheck, Callback = function(value) controller:Set("TeamCheck", value) end})
+                tab:CreateToggle({Title = "Boxes", Subtitle = "Draw a box around each player", Flag = prefix .. "Boxes", CurrentValue = settings.Boxes, Callback = function(value) controller:Set("Boxes", value) end})
+                tab:CreateToggle({Title = "Names", Subtitle = "Show player display names", Flag = prefix .. "Names", CurrentValue = settings.Names, Callback = function(value) controller:Set("Names", value) end})
+                tab:CreateToggle({Title = "Distance", Subtitle = "Show distance in studs", Flag = prefix .. "Distance", CurrentValue = settings.Distance, Callback = function(value) controller:Set("Distance", value) end})
+                tab:CreateToggle({Title = "Health Bar", Subtitle = "Show current player health", Flag = prefix .. "HealthBar", CurrentValue = settings.HealthBar, Callback = function(value) controller:Set("HealthBar", value) end})
+                tab:CreateToggle({Title = "Tracers", Subtitle = "Draw lines from the screen bottom", Flag = prefix .. "Tracers", CurrentValue = settings.Tracers, Callback = function(value) controller:Set("Tracers", value) end})
+                tab:CreateToggle({Title = "Skeleton", Subtitle = "Draw character rig connections", Flag = prefix .. "Skeleton", CurrentValue = settings.Skeleton, Callback = function(value) controller:Set("Skeleton", value) end})
+                tab:CreateToggle({Title = "Chams", Subtitle = "Highlight characters through walls", Flag = prefix .. "Chams", CurrentValue = settings.Chams, Callback = function(value) controller:Set("Chams", value) end})
+                tab:CreateSlider({Title = "Line Thickness", Subtitle = "Adjust ESP line width", Flag = prefix .. "Thickness", Range = {1, 4}, Increment = 1, CurrentValue = settings.Thickness, Callback = function(value) controller:Set("Thickness", value) end})
+                tab:CreateColorPicker({Name = "Box Color", Flag = prefix .. "BoxColor", CurrentColor = settings.BoxColor, Callback = function(value) controller:Set("BoxColor", value) end})
+                tab:CreateColorPicker({Name = "Text Color", Flag = prefix .. "TextColor", CurrentColor = settings.TextColor, Callback = function(value) controller:Set("TextColor", value) end})
+                tab:CreateColorPicker({Name = "Skeleton Color", Flag = prefix .. "SkeletonColor", CurrentColor = settings.SkeletonColor, Callback = function(value) controller:Set("SkeletonColor", value) end})
+                tab:CreateColorPicker({Name = "Tracer Color", Flag = prefix .. "TracerColor", CurrentColor = settings.TracerColor, Callback = function(value) controller:Set("TracerColor", value) end})
+                tab:CreateColorPicker({Name = "Chams Color", Flag = prefix .. "ChamsColor", CurrentColor = settings.ChamsColor, Callback = function(value) controller:Set("ChamsColor", value) end})
             end
 
             table.insert(window.ESPControllers, controller)
