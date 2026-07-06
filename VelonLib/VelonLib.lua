@@ -61,8 +61,8 @@ local ICONS = {
 
 local function merge(base, extra)
     local result = {}
-    for key, value in pairs(base or {}) do result[key] = value end
-    for key, value in pairs(extra or {}) do result[key] = value end
+    for key, value in pairs(type(base) == "table" and base or {}) do result[key] = value end
+    for key, value in pairs(type(extra) == "table" and extra or {}) do result[key] = value end
     return result
 end
 
@@ -182,7 +182,7 @@ local function bindResponsiveScale(screenGui, root, baseWidth, baseHeight)
         local viewport = camera and camera.ViewportSize or Vector2.new(baseWidth, baseHeight)
         local fitX = (viewport.X - 24) / baseWidth
         local fitY = (viewport.Y - 24) / baseHeight
-        scaler.Scale = math.clamp(math.min(fitX, fitY, 1), 0.56, 1)
+        scaler.Scale = math.clamp(math.min(fitX, fitY, 1), 0.35, 1)
     end
     local function watchCamera()
         if viewportConnection then viewportConnection:Disconnect() end
@@ -232,7 +232,7 @@ local function openDiscord(link)
                 args = {code = invite},
             }),
         })
-        local status = ok and response and (response.StatusCode or response.Status)
+        local status = ok and type(response) == "table" and (response.StatusCode or response.Status)
         if ok and (status == 200 or status == 204) then return true, "Discord opened" end
     end
     if copyText(link) then return true, "Link copied" end
@@ -268,6 +268,10 @@ function VelonLib:CreateKeySystem(options)
     }, options)
     assert(type(options.Validate) == "function", "CreateKeySystem requires Validate(key)")
 
+    if type(GLOBAL_ENV.__VELONLIB_CANCEL_KEY_SYSTEM) == "function" then
+        pcall(GLOBAL_ENV.__VELONLIB_CANCEL_KEY_SYSTEM)
+    end
+    GLOBAL_ENV.__VELONLIB_CANCEL_KEY_SYSTEM = nil
     local gui = makeScreenGui("VelonLib_KeySystem", 100)
     local dim = create("Frame", {Parent = gui, Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(0, 0, 0), BackgroundTransparency = 0.28})
     local panel = create("CanvasGroup", {
@@ -292,15 +296,39 @@ function VelonLib:CreateKeySystem(options)
 
     local finished = Instance.new("BindableEvent")
     local busy = false
+    local resolved = false
+    local cancelCurrent
+    local function clearCancellation()
+        if GLOBAL_ENV.__VELONLIB_CANCEL_KEY_SYSTEM == cancelCurrent then
+            GLOBAL_ENV.__VELONLIB_CANCEL_KEY_SYSTEM = nil
+        end
+    end
     local function finish(value)
-        if not gui.Parent then return end
+        if resolved then return end
+        resolved = true
+        clearCancellation()
+        if not gui.Parent then finished:Fire(value) return end
         tween(panel, 0.28, {GroupTransparency = 1})
         tween(panel, 0.28, {Position = UDim2.fromScale(0.5, 0.53)}, Enum.EasingStyle.Quart)
         task.delay(0.3, function()
-            if gui then gui:Destroy() end
+            if gui and gui.Parent then gui:Destroy() end
             finished:Fire(value)
         end)
     end
+    cancelCurrent = function()
+        if resolved then return end
+        resolved = true
+        clearCancellation()
+        if gui and gui.Parent then gui:Destroy() end
+        finished:Fire(false)
+    end
+    GLOBAL_ENV.__VELONLIB_CANCEL_KEY_SYSTEM = cancelCurrent
+    gui.Destroying:Connect(function()
+        if resolved then return end
+        resolved = true
+        clearCancellation()
+        task.defer(function() finished:Fire(false) end)
+    end)
     local function validate()
         if busy or keyBox.Text == "" then return end
         busy = true
@@ -308,6 +336,7 @@ function VelonLib:CreateKeySystem(options)
         tween(verify, 0.15, {BackgroundColor3 = COLORS.Surface3, TextColor3 = COLORS.Muted})
         task.spawn(function()
             local ok, result, message = safeCall(options.Validate, keyBox.Text)
+            if resolved or not gui.Parent then return end
             local success = ok and (result == true or (type(result) == "table" and result.Success == true))
             local resultMessage = message or (type(result) == "table" and result.Message)
             if success then
@@ -338,6 +367,7 @@ function VelonLib:CreateKeySystem(options)
     panel.Position = UDim2.fromScale(0.5, 0.53)
     tween(panel, 0.42, {GroupTransparency = 0, Position = UDim2.fromScale(0.5, 0.5)}, Enum.EasingStyle.Quart)
     local result = finished.Event:Wait()
+    clearCancellation()
     finished:Destroy()
     return result
 end
@@ -371,6 +401,8 @@ function VelonLib:CreateWindow(options)
         Splash = {Enabled = true, Duration = 1.6, Text = "VelonLib"},
         Theme = {}, Width = 820, Height = 520,
     }, options)
+    options.Width = math.max(tonumber(options.Width) or 820, 640)
+    options.Height = math.max(tonumber(options.Height) or 520, 420)
     local theme = merge(COLORS, options.Theme)
     local gui = makeScreenGui("VelonLib_UI", 60)
     local window = {
@@ -435,6 +467,7 @@ function VelonLib:CreateWindow(options)
     end))
 
     function window:Notify(notification)
+        if self.Destroyed or not gui.Parent then return end
         notification = merge({Title = "VelonLib", Content = "", Duration = 3, Icon = "info"}, notification)
         local holder = gui:FindFirstChild("Notifications") or create("Frame", {Parent = gui, Name = "Notifications", AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -18, 1, -18), Size = UDim2.fromOffset(320, 400), BackgroundTransparency = 1, ZIndex = 80})
         if not holder:FindFirstChildOfClass("UIListLayout") then create("UIListLayout", {Parent = holder, VerticalAlignment = Enum.VerticalAlignment.Bottom, HorizontalAlignment = Enum.HorizontalAlignment.Right, Padding = UDim.new(0, 8)}) end
@@ -451,12 +484,14 @@ function VelonLib:CreateWindow(options)
     end
 
     function window:SetTitle(title, subtitle)
+        if self.Destroyed then return end
         options.Title, titleLabel.Text = title, title
         if subtitle ~= nil then options.Subtitle, subtitleLabel.Text = subtitle, subtitle end
     end
-    function window:SetIcon(icon) options.Icon = icon applyIcon(brandIcon, icon) end
-    function window:SetLink(link) options.Link = link end
+    function window:SetIcon(icon) if self.Destroyed then return end options.Icon = icon applyIcon(brandIcon, icon) end
+    function window:SetLink(link) if self.Destroyed then return end options.Link = link end
     function window:SetVisible(visible)
+        if self.Destroyed then return end
         self.Visible = visible
         if visible then
             root.Visible = true
@@ -469,6 +504,7 @@ function VelonLib:CreateWindow(options)
     end
     function window:Toggle() self:SetVisible(not self.Visible) end
     function window:Minimize(state)
+        if self.Destroyed then return end
         if state == nil then state = not self.Minimized end
         self.Minimized = state
         local targetHeight = state and 58 or options.Height
@@ -476,7 +512,7 @@ function VelonLib:CreateWindow(options)
         tween(root, 0.35, {Size = UDim2.fromOffset(options.Width, targetHeight)}, Enum.EasingStyle.Quart)
         if state then task.delay(0.16, function() if self.Minimized then sidebar.Visible, content.Visible = false, false end end) end
     end
-    function window:Destroy()
+    function window:Destroy(fromGuiDestroy)
         if self.Destroyed then return end
         self.Destroyed = true
         for _, controller in ipairs(self.ESPControllers) do controller:Destroy() end
@@ -484,11 +520,19 @@ function VelonLib:CreateWindow(options)
         for index, item in ipairs(VelonLib.Windows) do
             if item == self then table.remove(VelonLib.Windows, index) break end
         end
-        if root.Parent then
+        if fromGuiDestroy then
+            return
+        elseif root.Parent then
             tween(root, 0.2, {GroupTransparency = 1, Position = UDim2.new(root.Position.X.Scale, root.Position.X.Offset, root.Position.Y.Scale, root.Position.Y.Offset + 20)})
             task.delay(0.22, function() if gui and gui.Parent then gui:Destroy() end end)
+        elseif gui and gui.Parent then
+            gui:Destroy()
         end
     end
+
+    table.insert(window.Connections, gui.Destroying:Connect(function()
+        if not window.Destroyed then window:Destroy(true) end
+    end))
 
     linkButton.MouseButton1Click:Connect(function()
         if options.Link == "" then window:Notify({Title = "Link", Content = "No link configured", Icon = "link"}) return end
@@ -502,6 +546,7 @@ function VelonLib:CreateWindow(options)
     end))
 
     function window:SelectTab(tab)
+        if self.Destroyed or type(tab) ~= "table" or tab.Window ~= self or not tab.Page.Parent then return end
         if self.SelectedTab == tab then return end
         if self.SelectedTab then
             local previous = self.SelectedTab
@@ -599,6 +644,7 @@ function VelonLib:CreateWindow(options)
         end
 
         function tab:CreateButton(config)
+            config = merge({RightSpace = 106}, config)
             local holder, _, final = controlBase(config, 54)
             local button = create("TextButton", {Parent = holder, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.fromOffset(92, 32), AutoButtonColor = false, BackgroundColor3 = theme.Accent, Font = Enum.Font.GothamSemibold, Text = final.ButtonText or "Run", TextColor3 = theme.AccentText, TextSize = 12, ZIndex = 27}, {corner(7)})
             attachHover(button, theme.Accent, Color3.fromRGB(210, 210, 215))
@@ -636,11 +682,23 @@ function VelonLib:CreateWindow(options)
             local bar = create("TextButton", {Parent = holder, Position = UDim2.new(0, 14, 1, -20), Size = UDim2.new(1, -28, 0, 6), AutoButtonColor = false, BackgroundColor3 = theme.Surface3, Text = "", ZIndex = 27}, {corner(3)})
             local fill = create("Frame", {Parent = bar, Size = UDim2.fromScale(0, 1), BackgroundColor3 = theme.Accent, BorderSizePixel = 0, ZIndex = 28}, {corner(3)})
             local knob = create("Frame", {Parent = fill, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(1, 0, 0.5, 0), Size = UDim2.fromOffset(12, 12), BackgroundColor3 = theme.Accent, ZIndex = 29}, {corner(6), stroke(theme.Background, 0, 2)})
-            local minimum, maximum = final.Range[1], final.Range[2]
-            local control = {Value = final.CurrentValue}
+            local range = type(final.Range) == "table" and final.Range or {0, 100}
+            local minimum = tonumber(range[1]) or 0
+            local maximum = tonumber(range[2]) or 100
+            if maximum < minimum then minimum, maximum = maximum, minimum end
+            local increment = math.abs(tonumber(final.Increment) or 1)
+            if increment == 0 then increment = 1 end
+            if maximum == minimum then maximum = minimum + increment end
+            final.Range, final.Increment = {minimum, maximum}, increment
+            local incrementDecimals = tostring(increment):match("%.(%d+)")
+            local decimalPlaces = math.min(incrementDecimals and #incrementDecimals or 0, 6)
+            local control = {Value = final.CurrentValue, Connection = nil, EndedConnection = nil}
+            local sliding = false
             function control:Set(value, silent)
                 value = math.clamp(tonumber(value) or minimum, minimum, maximum)
-                value = math.floor((value / final.Increment) + 0.5) * final.Increment
+                value = minimum + math.floor(((value - minimum) / increment) + 0.5) * increment
+                value = math.clamp(value, minimum, maximum)
+                if decimalPlaces > 0 then value = tonumber(string.format("%." .. decimalPlaces .. "f", value)) or value end
                 self.Value = value saveFlag(final, value)
                 local alpha = (value - minimum) / (maximum - minimum)
                 tween(fill, 0.08, {Size = UDim2.fromScale(alpha, 1)}, Enum.EasingStyle.Linear)
@@ -648,16 +706,23 @@ function VelonLib:CreateWindow(options)
                 if not silent then safeCall(final.Callback, value) end
             end
             function control:Get() return self.Value end
-            function control:Destroy() holder:Destroy() end
-            local sliding = false
+            function control:Destroy()
+                sliding = false
+                if self.Connection then self.Connection:Disconnect() self.Connection = nil end
+                if self.EndedConnection then self.EndedConnection:Disconnect() self.EndedConnection = nil end
+                holder:Destroy()
+            end
             local function fromInput(input)
+                if bar.AbsoluteSize.X <= 0 then return end
                 local alpha = math.clamp((input.Position.X - bar.AbsolutePosition.X) / bar.AbsoluteSize.X, 0, 1)
                 control:Set(minimum + (maximum - minimum) * alpha)
             end
             bar.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then sliding = true fromInput(input) end end)
             bar.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then sliding = false end end)
-            local connection = UserInputService.InputChanged:Connect(function(input) if sliding and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then fromInput(input) end end)
-            table.insert(window.Connections, connection)
+            control.Connection = UserInputService.InputChanged:Connect(function(input) if sliding and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then fromInput(input) end end)
+            control.EndedConnection = UserInputService.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then sliding = false end end)
+            table.insert(window.Connections, control.Connection)
+            table.insert(window.Connections, control.EndedConnection)
             control:Set(control.Value, true)
             table.insert(tab.Controls, control)
             return control
@@ -681,6 +746,7 @@ function VelonLib:CreateWindow(options)
 
         function tab:CreateDropdown(config)
             config = merge({Options = {}, CurrentOption = nil}, config)
+            if type(config.Options) ~= "table" then config.Options = {} end
             config.RightSpace = config.RightSpace or 204
             local holder, _, final = controlBase(config, 62)
             local selectedButton = create("TextButton", {Parent = holder, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -13, 0, 13), Size = UDim2.fromOffset(190, 36), AutoButtonColor = false, BackgroundColor3 = theme.Background, Font = Enum.Font.Gotham, Text = "", TextColor3 = theme.Text, TextSize = 12, ZIndex = 27}, {corner(7), stroke(theme.Border, 0.58)})
@@ -709,8 +775,19 @@ function VelonLib:CreateWindow(options)
                 tween(list, 0.22, {Size = UDim2.new(1, -28, 0, open and listHeight or 0)})
                 if not open then task.delay(0.23, function() if not self.Open then list.Visible = false end end) end
             end
-            function control:Refresh(optionsList, keepSelection) self.Options = optionsList or {} rebuild() if not keepSelection then self:Set(self.Options[1]) end if self.Open then self:SetOpen(true) end end
-            function control:Destroy() holder:Destroy() end
+            function control:Refresh(optionsList, keepSelection)
+                self.Options = type(optionsList) == "table" and optionsList or {}
+                local selectionExists = false
+                if keepSelection then
+                    for _, option in ipairs(self.Options) do
+                        if option == self.Value then selectionExists = true break end
+                    end
+                end
+                rebuild()
+                if not selectionExists then self:Set(self.Options[1]) end
+                if self.Open then self:SetOpen(true) end
+            end
+            function control:Destroy() self.Open = false holder:Destroy() end
             selectedButton.MouseButton1Click:Connect(function() control:SetOpen(not control.Open) end)
             rebuild() control:Set(control.Value, true)
             table.insert(tab.Controls, control)
@@ -722,19 +799,28 @@ function VelonLib:CreateWindow(options)
             config.RightSpace = config.RightSpace or 120
             local holder, _, final = controlBase(config, 62)
             local keyButton = create("TextButton", {Parent = holder, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -13, 0.5, 0), Size = UDim2.fromOffset(108, 34), AutoButtonColor = false, BackgroundColor3 = theme.Background, Font = Enum.Font.GothamMedium, TextColor3 = theme.Text, TextSize = 12, ZIndex = 27}, {corner(7), stroke(theme.Border, 0.58)})
-            local control = {Value = final.CurrentKeybind, Listening = false}
-            function control:Set(value, silent) self.Value = value keyButton.Text = value and value.Name or "None" saveFlag(final, value) if not silent then safeCall(final.ChangedCallback, value) end end
+            local control = {Value = final.CurrentKeybind, Listening = false, Connection = nil}
+            function control:Set(value, silent)
+                self.Value = value
+                keyButton.Text = typeof(value) == "EnumItem" and value.Name or tostring(value or "None")
+                saveFlag(final, value)
+                if not silent then safeCall(final.ChangedCallback, value) end
+            end
             function control:Get() return self.Value end
-            function control:Destroy() holder:Destroy() end
+            function control:Destroy()
+                self.Listening = false
+                if self.Connection then self.Connection:Disconnect() self.Connection = nil end
+                holder:Destroy()
+            end
             keyButton.MouseButton1Click:Connect(function() control.Listening = true keyButton.Text = "Press a key" end)
-            local connection = UserInputService.InputBegan:Connect(function(input, processed)
+            control.Connection = UserInputService.InputBegan:Connect(function(input, processed)
                 if control.Listening then
                     if input.UserInputType == Enum.UserInputType.Keyboard then control.Listening = false control:Set(input.KeyCode) end
                     return
                 end
                 if not processed and input.KeyCode == control.Value then safeCall(final.Callback, input.KeyCode) end
             end)
-            table.insert(window.Connections, connection)
+            table.insert(window.Connections, control.Connection)
             control:Set(control.Value, true)
             table.insert(tab.Controls, control)
             return control
@@ -742,6 +828,7 @@ function VelonLib:CreateWindow(options)
 
         function tab:CreateColorPicker(config)
             config = merge({CurrentColor = Color3.new(1, 1, 1)}, config)
+            if typeof(config.CurrentColor) ~= "Color3" then config.CurrentColor = Color3.new(1, 1, 1) end
             config.RightSpace = config.RightSpace or 82
             local holder, _, final = controlBase(config, 62)
             local swatch = create("TextButton", {Parent = holder, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -13, 0, 14), Size = UDim2.fromOffset(68, 34), AutoButtonColor = false, BackgroundColor3 = final.CurrentColor, Text = "", ZIndex = 27}, {corner(7), stroke(theme.Border, 0.58)})
@@ -756,7 +843,7 @@ function VelonLib:CreateWindow(options)
             create("UIGradient", {Parent = hue, Rotation = 90, Color = ColorSequence.new({ColorSequenceKeypoint.new(0, Color3.fromHSV(0,1,1)), ColorSequenceKeypoint.new(0.17, Color3.fromHSV(0.17,1,1)), ColorSequenceKeypoint.new(0.33, Color3.fromHSV(0.33,1,1)), ColorSequenceKeypoint.new(0.5, Color3.fromHSV(0.5,1,1)), ColorSequenceKeypoint.new(0.67, Color3.fromHSV(0.67,1,1)), ColorSequenceKeypoint.new(0.83, Color3.fromHSV(0.83,1,1)), ColorSequenceKeypoint.new(1, Color3.fromHSV(1,1,1))})})
             local hueCursor = create("Frame", {Parent = hue, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0), Size = UDim2.new(1, -4, 0, 4), BackgroundColor3 = Color3.new(1,1,1), ZIndex = 31}, {corner(2), stroke(Color3.new(0,0,0), 0.4)})
             local h, s, v = Color3.toHSV(final.CurrentColor)
-            local control = {Value = final.CurrentColor, Open = false}
+            local control = {Value = final.CurrentColor, Open = false, ChangedConnection = nil, EndedConnection = nil}
             function control:Set(value, silent)
                 if typeof(value) ~= "Color3" then return end
                 self.Value = value h, s, v = Color3.toHSV(value)
@@ -767,16 +854,21 @@ function VelonLib:CreateWindow(options)
             end
             function control:Get() return self.Value end
             function control:SetOpen(open) self.Open = open picker.Visible = true tween(holder, 0.22, {Size = UDim2.new(1, -5, 0, open and 220 or 62)}) if not open then task.delay(0.23, function() if not self.Open then picker.Visible = false end end) end end
-            function control:Destroy() holder:Destroy() end
+            function control:Destroy()
+                self.Open = false
+                if self.ChangedConnection then self.ChangedConnection:Disconnect() self.ChangedConnection = nil end
+                if self.EndedConnection then self.EndedConnection:Disconnect() self.EndedConnection = nil end
+                holder:Destroy()
+            end
             swatch.MouseButton1Click:Connect(function() control:SetOpen(not control.Open) end)
             local draggingSV, draggingHue = false, false
             local function updateSV(input) s = math.clamp((input.Position.X-sv.AbsolutePosition.X)/sv.AbsoluteSize.X,0,1) v = 1-math.clamp((input.Position.Y-sv.AbsolutePosition.Y)/sv.AbsoluteSize.Y,0,1) control:Set(Color3.fromHSV(h,s,v)) end
             local function updateHue(input) h = math.clamp((input.Position.Y-hue.AbsolutePosition.Y)/hue.AbsoluteSize.Y,0,1) control:Set(Color3.fromHSV(h,s,v)) end
             sv.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then draggingSV=true updateSV(input) end end)
             hue.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then draggingHue=true updateHue(input) end end)
-            local changed = UserInputService.InputChanged:Connect(function(input) if draggingSV then updateSV(input) elseif draggingHue then updateHue(input) end end)
-            local ended = UserInputService.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then draggingSV,draggingHue=false,false end end)
-            table.insert(window.Connections, changed) table.insert(window.Connections, ended)
+            control.ChangedConnection = UserInputService.InputChanged:Connect(function(input) if draggingSV then updateSV(input) elseif draggingHue then updateHue(input) end end)
+            control.EndedConnection = UserInputService.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then draggingSV,draggingHue=false,false end end)
+            table.insert(window.Connections, control.ChangedConnection) table.insert(window.Connections, control.EndedConnection)
             control:Set(control.Value, true)
             table.insert(tab.Controls, control)
             return control
@@ -1019,8 +1111,9 @@ function VelonLib:CreateWindow(options)
                 if controller.Destroyed then return end
                 if not settings.Enabled then return end
                 elapsed = elapsed + deltaTime
-                if elapsed < settings.UpdateRate then return end
-                elapsed = 0
+                local updateRate = math.max(tonumber(settings.UpdateRate) or 0, 0)
+                if elapsed < updateRate then return end
+                elapsed = updateRate > 0 and math.max(elapsed - updateRate, 0) or 0
                 local camera = workspace.CurrentCamera
                 if not camera then return end
                 for _, player in ipairs(Players:GetPlayers()) do
@@ -1077,6 +1170,9 @@ function VelonLib:CreateWindow(options)
 end
 
 function VelonLib:DestroyAll()
+    if type(GLOBAL_ENV.__VELONLIB_CANCEL_KEY_SYSTEM) == "function" then
+        pcall(GLOBAL_ENV.__VELONLIB_CANCEL_KEY_SYSTEM)
+    end
     local active = {}
     for _, window in ipairs(self.Windows) do table.insert(active, window) end
     for _, window in ipairs(active) do
