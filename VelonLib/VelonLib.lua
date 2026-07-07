@@ -4,10 +4,11 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local HttpService = game:GetService("HttpService")
 local CoreGui = game:GetService("CoreGui")
+local GuiService = game:GetService("GuiService")
 
 local LocalPlayer = Players.LocalPlayer
 local VelonLib = {
-    Version = "1.0.0",
+    Version = "1.1.0",
     Flags = {},
     Windows = {},
 }
@@ -61,12 +62,40 @@ local function merge(base, extra)
     return result
 end
 
+local function preferredTextScale()
+    local ok, value = pcall(function() return GuiService.PreferredTextSize end)
+    if not ok or not value then return 1 end
+    local name = value.Name
+    if name == "Large" or name == "Large1" then return 1.06 end
+    if name == "Larger" or name == "Larger1" then return 1.12 end
+    if name == "Largest" then return 1.18 end
+    return 1
+end
+
+local function reducedMotionEnabled()
+    local ok, value = pcall(function() return GuiService.ReducedMotionEnabled end)
+    return ok and value == true
+end
+
+local function touchInputPreferred()
+    local ok, value = pcall(function() return UserInputService.PreferredInput end)
+    if ok and value then return value.Name == "Touch" end
+    return UserInputService.TouchEnabled
+end
+
 local function create(className, properties, children)
     local object = Instance.new(className)
     for key, value in pairs(properties or {}) do
         if key ~= "Parent" then object[key] = value end
     end
     for _, child in ipairs(children or {}) do child.Parent = object end
+    if object:IsA("TextLabel") or object:IsA("TextButton") or object:IsA("TextBox") then
+        local baseSize = properties and properties.TextSize
+        if type(baseSize) == "number" then
+            object:SetAttribute("VelonBaseTextSize", baseSize)
+            object.TextSize = math.floor(baseSize * preferredTextScale() + 0.5)
+        end
+    end
     if properties and properties.Parent then object.Parent = properties.Parent end
     return object
 end
@@ -92,6 +121,7 @@ local function padding(left, right, top, bottom)
 end
 
 local function tween(object, duration, properties, style, direction)
+    if reducedMotionEnabled() then duration = 0.01 end
     local animation = TweenService:Create(object, TweenInfo.new(
         duration or 0.2,
         style or Enum.EasingStyle.Quint,
@@ -172,11 +202,14 @@ local function bindResponsiveScale(screenGui, root, baseWidth, baseHeight)
     local scaler = create("UIScale", {Parent = root, Scale = 1})
     local cameraConnection
     local viewportConnection
+    local sizeConnection
     local function update()
         local camera = workspace.CurrentCamera
         local viewport = camera and camera.ViewportSize or Vector2.new(baseWidth, baseHeight)
-        local fitX = (viewport.X - 24) / baseWidth
-        local fitY = (viewport.Y - 24) / baseHeight
+        local currentWidth = root.Size.X.Offset > 0 and root.Size.X.Offset + 24 or baseWidth
+        local currentHeight = root.Size.Y.Offset > 0 and root.Size.Y.Offset + 24 or baseHeight
+        local fitX = (viewport.X - 24) / currentWidth
+        local fitY = (viewport.Y - 24) / currentHeight
         scaler.Scale = math.clamp(math.min(fitX, fitY, 1), 0.35, 1)
     end
     local function watchCamera()
@@ -186,11 +219,18 @@ local function bindResponsiveScale(screenGui, root, baseWidth, baseHeight)
         update()
     end
     cameraConnection = workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(watchCamera)
+    sizeConnection = root:GetPropertyChangedSignal("Size"):Connect(update)
     watchCamera()
-    screenGui.Destroying:Connect(function()
+    local cleaned = false
+    local function cleanup()
+        if cleaned then return end
+        cleaned = true
         if cameraConnection then cameraConnection:Disconnect() end
         if viewportConnection then viewportConnection:Disconnect() end
-    end)
+        if sizeConnection then sizeConnection:Disconnect() end
+    end
+    screenGui.Destroying:Connect(cleanup)
+    root.Destroying:Connect(cleanup)
     return scaler
 end
 
@@ -243,6 +283,21 @@ local function makeScreenGui(name, displayOrder)
     })
     protectGui(gui)
     gui.Parent = getGuiParent()
+    local textPreferenceConnection
+    local ok = pcall(function()
+        textPreferenceConnection = GuiService:GetPropertyChangedSignal("PreferredTextSize"):Connect(function()
+            local scale = preferredTextScale()
+            for _, item in ipairs(gui:GetDescendants()) do
+                if item:IsA("TextLabel") or item:IsA("TextButton") or item:IsA("TextBox") then
+                    local baseSize = item:GetAttribute("VelonBaseTextSize")
+                    if type(baseSize) == "number" then item.TextSize = math.floor(baseSize * scale + 0.5) end
+                end
+            end
+        end)
+    end)
+    if ok and textPreferenceConnection then
+        gui.Destroying:Connect(function() textPreferenceConnection:Disconnect() end)
+    end
     return gui
 end
 
@@ -310,7 +365,7 @@ function VelonLib:ShowSplash(options)
     local progressConnection = progressValue.Changed:Connect(function(value)
         percentage.Text = tostring(math.floor(value + 0.5)) .. "%"
     end)
-    local duration = math.max(tonumber(options.Duration) or 1.8, 0.7)
+    local duration = reducedMotionEnabled() and 0.15 or math.max(tonumber(options.Duration) or 1.8, 0.7)
     title.TextTransparency, subtitle.TextTransparency = 1, 1
     tween(holder, 0.42, {GroupTransparency = 0, Position = UDim2.fromScale(0.5, 0.5)}, Enum.EasingStyle.Quart)
     tween(cardScale, 0.48, {Scale = 1}, Enum.EasingStyle.Back)
@@ -523,7 +578,7 @@ function VelonLib:CreateWindow(options)
         Link = "", ToggleKey = Enum.KeyCode.RightShift,
         MainTab = {Name = "Main", Icon = "home"},
         Splash = {Enabled = true, Duration = 1.8, Text = "VelonLib"},
-        Theme = {}, Width = 820, Height = 520,
+        Theme = {}, Width = 820, Height = 520, Mobile = {Enabled = true, ToggleButton = true},
     }, options)
     options.Width = math.max(tonumber(options.Width) or 820, 640)
     options.Height = math.max(tonumber(options.Height) or 520, 420)
@@ -541,7 +596,7 @@ function VelonLib:CreateWindow(options)
     local gui = makeScreenGui("VelonLib_UI", 60)
     local window = {
         Gui = gui, Options = options, Theme = theme, Flags = {}, Tabs = {}, Connections = {},
-        Destroyed = false, Minimized = false, Visible = true, ESPControllers = {},
+        Destroyed = false, Minimized = false, Visible = true, ESPControllers = {}, Modals = {},
         SplashActive = false,
     }
     table.insert(self.Windows, window)
@@ -568,10 +623,10 @@ function VelonLib:CreateWindow(options)
         local light = create("Frame", {Parent = trafficHolder, Position = UDim2.fromOffset((index - 1) * 13, 13), Size = UDim2.fromOffset(9, 9), BackgroundColor3 = color, ZIndex = 24}, {corner(5)})
         light.BackgroundTransparency = 0.08
     end
-    local titleLabel = create("TextLabel", {Parent = topbar, BackgroundTransparency = 1, Position = UDim2.fromOffset(64, 11), Size = UDim2.new(1, -230, 0, 21), Font = Enum.Font.GothamBold, Text = options.Title, TextColor3 = theme.Text, TextSize = 16, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 23})
-    local subtitleLabel = create("TextLabel", {Parent = topbar, BackgroundTransparency = 1, Position = UDim2.fromOffset(64, 31), Size = UDim2.new(1, -230, 0, 16), Font = Enum.Font.Gotham, Text = options.Subtitle, TextColor3 = theme.Muted, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 23})
+    local titleLabel = create("TextLabel", {Parent = topbar, BackgroundTransparency = 1, Position = UDim2.fromOffset(64, 11), Size = UDim2.new(1, -270, 0, 21), Font = Enum.Font.GothamBold, Text = options.Title, TextColor3 = theme.Text, TextSize = 16, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 23})
+    local subtitleLabel = create("TextLabel", {Parent = topbar, BackgroundTransparency = 1, Position = UDim2.fromOffset(64, 31), Size = UDim2.new(1, -270, 0, 16), Font = Enum.Font.Gotham, Text = options.Subtitle, TextColor3 = theme.Muted, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 23})
 
-    local actionHolder = create("Frame", {Parent = topbar, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.fromOffset(126, 34), BackgroundTransparency = 1, ZIndex = 23})
+    local actionHolder = create("Frame", {Parent = topbar, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.fromOffset(168, 34), BackgroundTransparency = 1, ZIndex = 23})
     create("UIListLayout", {Parent = actionHolder, FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Right, Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder})
     local function actionButton(icon, order)
         local button = create("TextButton", {Parent = actionHolder, LayoutOrder = order, Size = UDim2.fromOffset(34, 34), AutoButtonColor = false, Text = "", BackgroundColor3 = theme.Surface2, ZIndex = 24}, {corner(8)})
@@ -582,9 +637,10 @@ function VelonLib:CreateWindow(options)
         button.MouseLeave:Connect(function() tween(image, 0.14, {ImageColor3 = theme.Muted}) end)
         return button, image
     end
-    local linkButton = actionButton("link", 1)
-    local minimizeButton = actionButton("minus", 2)
-    local closeButton, closeIcon = actionButton("x", 3)
+    local searchButton = actionButton("search", 1)
+    local linkButton = actionButton("link", 2)
+    local minimizeButton = actionButton("minus", 3)
+    local closeButton, closeIcon = actionButton("x", 4)
     closeButton.MouseEnter:Connect(function() tween(closeButton, 0.14, {BackgroundColor3 = theme.Danger}); tween(closeIcon, 0.14, {ImageColor3 = Color3.new(1, 1, 1)}) end)
 
     local sidebar = create("Frame", {Parent = root, Position = UDim2.fromOffset(0, 58), Size = UDim2.new(0, 64, 1, -58), BackgroundColor3 = theme.Surface, BorderSizePixel = 0, ZIndex = 21})
@@ -595,9 +651,43 @@ function VelonLib:CreateWindow(options)
     local pages = create("Frame", {Parent = content, Position = UDim2.fromOffset(18, 18), Size = UDim2.new(1, -36, 1, -36), BackgroundTransparency = 1, ClipsDescendants = true, ZIndex = 22})
     window.Sidebar, window.Content, window.Pages, window.BrandIcon = sidebar, content, pages, nil
 
+    local searchPanel = create("CanvasGroup", {
+        Parent = root, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -14, 0, 66),
+        Size = UDim2.fromOffset(310, 48), BackgroundColor3 = theme.Surface2,
+        GroupTransparency = 1, Visible = false, ZIndex = 60,
+    }, {corner(10), stroke(theme.Border, 0.4)})
+    local searchIcon = makeIcon(searchPanel, "search", 17, theme.Muted, 62)
+    searchIcon.AnchorPoint, searchIcon.Position = Vector2.new(0, 0.5), UDim2.new(0, 14, 0.5, 0)
+    local searchBox = create("TextBox", {
+        Parent = searchPanel, Position = UDim2.fromOffset(42, 0), Size = UDim2.new(1, -84, 1, 0),
+        BackgroundTransparency = 1, ClearTextOnFocus = false, Font = Enum.Font.Gotham,
+        PlaceholderText = "Search current tab...", PlaceholderColor3 = theme.Muted,
+        Text = "", TextColor3 = theme.Text, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 62,
+    })
+    local searchClose = create("TextButton", {
+        Parent = searchPanel, AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -8, 0.5, 0),
+        Size = UDim2.fromOffset(32, 32), BackgroundColor3 = theme.Surface3, AutoButtonColor = false,
+        Text = "", ZIndex = 62,
+    }, {corner(7)})
+    local searchCloseIcon = makeIcon(searchClose, "x", 14, theme.Muted, 63)
+    searchCloseIcon.AnchorPoint, searchCloseIcon.Position = Vector2.new(0.5, 0.5), UDim2.fromScale(0.5, 0.5)
+    window.SearchPanel, window.SearchBox, window.SearchQuery = searchPanel, searchBox, ""
+
+    local mobileOptions = type(options.Mobile) == "table" and options.Mobile or {}
+    local mobileToggle = create("TextButton", {
+        Parent = gui, Name = "MobileToggle", AnchorPoint = Vector2.new(1, 1),
+        Position = UDim2.new(1, -18, 1, -18), Size = UDim2.fromOffset(52, 52),
+        BackgroundColor3 = theme.Surface2, AutoButtonColor = false, Text = "",
+        Visible = false, ZIndex = 86,
+    }, {corner(14), stroke(theme.Border, 0.3)})
+    local mobileToggleIcon = makeIcon(mobileToggle, "menu", 21, theme.Text, 87)
+    mobileToggleIcon.AnchorPoint, mobileToggleIcon.Position = Vector2.new(0.5, 0.5), UDim2.fromScale(0.5, 0.5)
+    window.MobileToggle = mobileToggle
+
     local dragging, dragStart, startPosition
     topbar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            window.UserPositioned = true
             dragging, dragStart, startPosition = true, input.Position, windowHost.Position
             input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end)
         end
@@ -610,9 +700,137 @@ function VelonLib:CreateWindow(options)
     end))
 
     local setTabPreviews
+    local function refreshMobileToggle()
+        local enabled = options.Mobile ~= false and mobileOptions.Enabled ~= false and mobileOptions.ToggleButton ~= false
+        mobileToggle.Visible = enabled and window.MobileMode == true and not window.Visible and not window.Destroyed
+    end
+
+    function window:SetMobileMode(enabled)
+        self.MobileMode = enabled == true
+        self.UserPositioned = false
+        local actionSize = self.MobileMode and 38 or 34
+        local targetWidth = self.MobileMode and math.min(options.Width, 560) or options.Width
+        local targetHeight = self.MobileMode and math.min(options.Height, 360) or options.Height
+        if not self.Minimized then windowHost.Size = UDim2.fromOffset(targetWidth, targetHeight) end
+        windowHost.Position = UDim2.fromScale(0.5, 0.5)
+        actionHolder.Size = UDim2.fromOffset(self.MobileMode and 184 or 168, actionSize)
+        for _, item in ipairs(actionHolder:GetChildren()) do
+            if item:IsA("GuiButton") then item.Size = UDim2.fromOffset(actionSize, actionSize) end
+        end
+        for _, tab in ipairs(self.Tabs) do
+            if tab.Button then tab.Button.Size = UDim2.fromOffset(self.MobileMode and 46 or 42, self.MobileMode and 46 or 42) end
+            for _, panel in ipairs(tab.PreviewPanels or {}) do
+                local height = self.MobileMode and math.min(options.Height, 360) or options.Height
+                panel.Size = UDim2.fromOffset(280, height)
+                local card = panel:FindFirstChildOfClass("Frame")
+                if card then card.Size = UDim2.fromOffset(280, height) end
+            end
+        end
+        refreshMobileToggle()
+    end
+
+    mobileToggle.MouseButton1Click:Connect(function() window:SetVisible(true) end)
+    local preferredInputConnection
+    local preferredInputOk = pcall(function()
+        preferredInputConnection = UserInputService:GetPropertyChangedSignal("PreferredInput"):Connect(function()
+            window:SetMobileMode(touchInputPreferred())
+        end)
+    end)
+    if preferredInputOk and preferredInputConnection then table.insert(window.Connections, preferredInputConnection) end
+
+    function window:ApplySearch(query)
+        if self.Destroyed then return end
+        self.SearchQuery = string.lower(tostring(query or "")):gsub("^%s+", ""):gsub("%s+$", "")
+        local tab = self.SelectedTab
+        if not tab or not tab.Scroll then return end
+        for _, item in ipairs(tab.Scroll:GetChildren()) do
+            if item:IsA("GuiObject") then
+                local text = item:GetAttribute("VelonSearchText")
+                if type(text) == "string" then
+                    item.Visible = self.SearchQuery == "" or string.find(text, self.SearchQuery, 1, true) ~= nil
+                end
+            end
+        end
+    end
+
+    function window:SetSearchVisible(visible)
+        if self.Destroyed then return end
+        self.SearchVisible = visible == true
+        if self.SearchVisible then
+            searchPanel.Visible = true
+            tween(searchPanel, 0.16, {GroupTransparency = 0, Position = UDim2.new(1, -14, 0, 66)})
+            task.defer(function() if searchBox.Parent then searchBox:CaptureFocus() end end)
+        else
+            searchBox.Text = ""
+            self:ApplySearch("")
+            tween(searchPanel, 0.14, {GroupTransparency = 1, Position = UDim2.new(1, -14, 0, 60)})
+            task.delay(reducedMotionEnabled() and 0.02 or 0.15, function()
+                if searchPanel.Parent and not self.SearchVisible then searchPanel.Visible = false end
+            end)
+        end
+    end
+
+    searchButton.MouseButton1Click:Connect(function() window:SetSearchVisible(not window.SearchVisible) end)
+    searchClose.MouseButton1Click:Connect(function() window:SetSearchVisible(false) end)
+    searchBox:GetPropertyChangedSignal("Text"):Connect(function() window:ApplySearch(searchBox.Text) end)
+
+    function window:Modal(config)
+        if self.Destroyed or not gui.Parent then return end
+        config = merge({
+            Title = "Confirm action", Content = "", Icon = "circle-help",
+            ConfirmText = "Confirm", CancelText = "Cancel", ShowCancel = true,
+            DismissOnBackdrop = false,
+        }, config)
+        local backdrop = create("TextButton", {
+            Parent = gui, Name = "Modal", Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(0, 0, 0),
+            BackgroundTransparency = 1, AutoButtonColor = false, Text = "", Active = true, ZIndex = 90,
+        })
+        local dialog = create("CanvasGroup", {
+            Parent = backdrop, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.52),
+            Size = UDim2.fromOffset(430, 224), BackgroundColor3 = theme.Surface,
+            GroupTransparency = 1, ZIndex = 91,
+        }, {corner(13), stroke(theme.Border, 0.35)})
+        bindResponsiveScale(gui, dialog, 460, 254)
+        local iconHolder = create("Frame", {Parent = dialog, Position = UDim2.fromOffset(20, 20), Size = UDim2.fromOffset(38, 38), BackgroundColor3 = theme.Surface3, ZIndex = 92}, {corner(9)})
+        local modalIcon = makeIcon(iconHolder, config.Icon, 19, theme.Text, 93)
+        modalIcon.AnchorPoint, modalIcon.Position = Vector2.new(0.5, 0.5), UDim2.fromScale(0.5, 0.5)
+        create("TextLabel", {Parent = dialog, Position = UDim2.fromOffset(70, 18), Size = UDim2.new(1, -90, 0, 27), BackgroundTransparency = 1, Font = Enum.Font.GothamBold, Text = tostring(config.Title), TextColor3 = theme.Text, TextSize = 17, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 92})
+        create("TextLabel", {Parent = dialog, Position = UDim2.fromOffset(70, 46), Size = UDim2.new(1, -90, 0, 18), BackgroundTransparency = 1, Font = Enum.Font.GothamMedium, Text = "VELONLIB", TextColor3 = theme.Muted, TextSize = 10, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 92})
+        create("TextLabel", {Parent = dialog, Position = UDim2.fromOffset(20, 82), Size = UDim2.new(1, -40, 0, 66), BackgroundTransparency = 1, Font = Enum.Font.Gotham, Text = tostring(config.Content), TextColor3 = theme.Muted, TextSize = 13, TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top, ZIndex = 92})
+        local buttonRow = create("Frame", {Parent = dialog, Position = UDim2.new(0, 20, 1, -56), Size = UDim2.new(1, -40, 0, 36), BackgroundTransparency = 1, ZIndex = 92})
+        create("UIListLayout", {Parent = buttonRow, FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Right, Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder})
+        local buttonWidth = config.ShowCancel == false and 390 or 128
+        local controller = {Root = backdrop, Closed = false}
+        local function removeController()
+            for index, item in ipairs(window.Modals) do if item == controller then table.remove(window.Modals, index) break end end
+        end
+        function controller:Close(result)
+            if self.Closed then return end
+            self.Closed = true
+            removeController()
+            tween(backdrop, 0.16, {BackgroundTransparency = 1})
+            tween(dialog, 0.16, {GroupTransparency = 1, Position = UDim2.fromScale(0.5, 0.48)})
+            safeCall(config.Callback, result == true)
+            task.delay(reducedMotionEnabled() and 0.02 or 0.17, function() if backdrop.Parent then backdrop:Destroy() end end)
+        end
+        if config.ShowCancel ~= false then
+            local cancel = create("TextButton", {Parent = buttonRow, LayoutOrder = 1, Size = UDim2.fromOffset(buttonWidth, 36), BackgroundColor3 = theme.Surface3, AutoButtonColor = false, Font = Enum.Font.GothamSemibold, Text = tostring(config.CancelText), TextColor3 = theme.Text, TextSize = 12, ZIndex = 93}, {corner(8)})
+            attachHover(cancel, theme.Surface3, theme.Border)
+            cancel.MouseButton1Click:Connect(function() controller:Close(false) end)
+        end
+        local confirm = create("TextButton", {Parent = buttonRow, LayoutOrder = 2, Size = UDim2.fromOffset(buttonWidth, 36), BackgroundColor3 = theme.Accent, AutoButtonColor = false, Font = Enum.Font.GothamSemibold, Text = tostring(config.ConfirmText), TextColor3 = theme.AccentText, TextSize = 12, ZIndex = 93}, {corner(8)})
+        attachHover(confirm, theme.Accent, Color3.fromRGB(210, 210, 215))
+        confirm.MouseButton1Click:Connect(function() controller:Close(true) end)
+        backdrop.MouseButton1Click:Connect(function() if config.DismissOnBackdrop then controller:Close(false) end end)
+        table.insert(self.Modals, controller)
+        tween(backdrop, 0.18, {BackgroundTransparency = 0.38})
+        tween(dialog, 0.22, {GroupTransparency = 0, Position = UDim2.fromScale(0.5, 0.5)}, Enum.EasingStyle.Quart)
+        return controller
+    end
 
     function window:Notify(notification)
         if self.Destroyed or not gui.Parent then return end
+        if type(notification) == "table" and (notification.Modal == true or notification.Type == "Modal") then return self:Modal(notification) end
         notification = merge({Title = "VelonLib", Content = "", Duration = 3, Icon = "info"}, notification)
         local holder = gui:FindFirstChild("Notifications") or create("Frame", {Parent = gui, Name = "Notifications", AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -18, 1, -18), Size = UDim2.fromOffset(320, 400), BackgroundTransparency = 1, ZIndex = 80})
         if not holder:FindFirstChildOfClass("UIListLayout") then create("UIListLayout", {Parent = holder, VerticalAlignment = Enum.VerticalAlignment.Bottom, HorizontalAlignment = Enum.HorizontalAlignment.Right, Padding = UDim.new(0, 8)}) end
@@ -638,6 +856,7 @@ function VelonLib:CreateWindow(options)
     function window:SetVisible(visible)
         if self.Destroyed then return end
         self.Visible = visible
+        refreshMobileToggle()
         if setTabPreviews then setTabPreviews(self.SelectedTab, visible) end
         if visible then
             windowHost.Visible = true
@@ -653,15 +872,21 @@ function VelonLib:CreateWindow(options)
         if self.Destroyed then return end
         if state == nil then state = not self.Minimized end
         self.Minimized = state
-        local targetHeight = state and 58 or options.Height
+        local targetHeight = state and 58 or (self.MobileMode and math.min(options.Height, 360) or options.Height)
+        local targetWidth = self.MobileMode and math.min(options.Width, 560) or options.Width
         if not state then sidebar.Visible, content.Visible = true, true end
         if setTabPreviews then setTabPreviews(self.SelectedTab, not state) end
-        tween(windowHost, 0.35, {Size = UDim2.fromOffset(options.Width, targetHeight)}, Enum.EasingStyle.Quart)
+        tween(windowHost, 0.35, {Size = UDim2.fromOffset(targetWidth, targetHeight)}, Enum.EasingStyle.Quart)
         if state then task.delay(0.16, function() if self.Minimized then sidebar.Visible, content.Visible = false, false end end) end
     end
     function window:Destroy(fromGuiDestroy)
         if self.Destroyed then return end
         self.Destroyed = true
+        for _, modal in ipairs(self.Modals) do
+            modal.Closed = true
+            if modal.Root and modal.Root.Parent then modal.Root:Destroy() end
+        end
+        self.Modals = {}
         for _, controller in ipairs(self.ESPControllers) do controller:Destroy() end
         for _, connection in ipairs(self.Connections) do pcall(function() connection:Disconnect() end) end
         for index, item in ipairs(VelonLib.Windows) do
@@ -690,11 +915,16 @@ function VelonLib:CreateWindow(options)
     minimizeButton.MouseButton1Click:Connect(function() window:Minimize() end)
     closeButton.MouseButton1Click:Connect(function() window:SetVisible(false) end)
     table.insert(window.Connections, UserInputService.InputBegan:Connect(function(input)
+        if input.KeyCode == Enum.KeyCode.Escape and window.SearchVisible then window:SetSearchVisible(false) return end
         if input.KeyCode == options.ToggleKey and (not window.Visible or UserInputService:GetFocusedTextBox() == nil) then window:Toggle() end
     end))
 
     setTabPreviews = function(tab, visible)
         if not tab or not tab.PreviewPanels then return end
+        if window.MobileMode and not window.UserPositioned then
+            local targetX = visible and #tab.PreviewPanels > 0 and 0.36 or 0.5
+            tween(windowHost, 0.22, {Position = UDim2.new(targetX, 0, windowHost.Position.Y.Scale, windowHost.Position.Y.Offset)}, Enum.EasingStyle.Quart)
+        end
         visible = visible and window.Visible and not window.Minimized and not window.SplashActive
         for _, panel in ipairs(tab.PreviewPanels) do
             if panel and panel.Parent then
@@ -730,6 +960,7 @@ function VelonLib:CreateWindow(options)
         tween(tab.Button, 0.18, {BackgroundColor3 = theme.Accent})
         tween(tab.Icon, 0.18, {ImageColor3 = theme.AccentText})
         tween(tab.Page, 0.24, {GroupTransparency = 0, Position = UDim2.fromOffset(0, 0)}, Enum.EasingStyle.Quart)
+        self:ApplySearch(self.SearchQuery)
         setTabPreviews(tab, true)
     end
 
@@ -747,6 +978,7 @@ function VelonLib:CreateWindow(options)
         tab.Button, tab.Icon, tab.Page, tab.Scroll, tab.Heading = button, icon, page, scroll, heading
         button.MouseButton1Click:Connect(function() window:SelectTab(tab) end)
         table.insert(self.Tabs, tab)
+        if window.MobileMode then button.Size = UDim2.fromOffset(46, 46) end
 
         function tab:SetName(name)
             self.Options.Name = tostring(name)
@@ -767,6 +999,9 @@ function VelonLib:CreateWindow(options)
             config.Name = config.Title or config.Name
             config.Description = config.Subtitle or config.Description
             local holder = create("Frame", {Parent = scroll, Size = UDim2.new(1, -5, 0, height or 60), BackgroundColor3 = theme.Surface, ClipsDescendants = true, ZIndex = 25}, {corner(9), stroke(theme.Border, 0.58)})
+            local searchText = string.lower(tostring(config.Name) .. " " .. tostring(config.Description) .. " " .. tostring(config.Content or ""))
+            holder:SetAttribute("VelonSearchText", searchText)
+            if window.SearchQuery ~= "" then holder.Visible = string.find(searchText, window.SearchQuery, 1, true) ~= nil end
             local hasSubtitle = config.Description ~= ""
             local rightSpace = config.RightSpace or 14
             local title = create("TextLabel", {Parent = holder, BackgroundTransparency = 1, Position = UDim2.fromOffset(14, hasSubtitle and 9 or 0), Size = UDim2.new(1, -(14 + rightSpace), 0, hasSubtitle and 22 or height or 60), Font = Enum.Font.GothamMedium, Text = config.Name, TextColor3 = theme.Text, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 26})
@@ -782,6 +1017,9 @@ function VelonLib:CreateWindow(options)
 
         function tab:CreateSection(name)
             local label = create("TextLabel", {Parent = scroll, Size = UDim2.new(1, -5, 0, 26), BackgroundTransparency = 1, Font = Enum.Font.GothamSemibold, Text = string.upper(tostring(name)), TextColor3 = theme.Muted, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 25})
+            local searchText = string.lower(tostring(name))
+            label:SetAttribute("VelonSearchText", searchText)
+            if window.SearchQuery ~= "" then label.Visible = string.find(searchText, window.SearchQuery, 1, true) ~= nil end
             return label
         end
 
@@ -789,6 +1027,9 @@ function VelonLib:CreateWindow(options)
             if type(config) == "string" then config = {Title = config} end
             config = merge({Title = "Header", Subtitle = "", Icon = nil}, config)
             local holder = create("Frame", {Parent = scroll, Size = UDim2.new(1, -5, 0, config.Subtitle ~= "" and 70 or 58), BackgroundColor3 = theme.Surface2, ZIndex = 25}, {corner(10)})
+            local searchText = string.lower(tostring(config.Title) .. " " .. tostring(config.Subtitle))
+            holder:SetAttribute("VelonSearchText", searchText)
+            if window.SearchQuery ~= "" then holder.Visible = string.find(searchText, window.SearchQuery, 1, true) ~= nil end
             create("Frame", {Parent = holder, Position = UDim2.fromOffset(0, 12), Size = UDim2.fromOffset(3, config.Subtitle ~= "" and 46 or 34), BackgroundColor3 = theme.Accent, BorderSizePixel = 0, ZIndex = 26}, {corner(2)})
             local textOffset = config.Icon and 54 or 16
             if config.Icon then
@@ -1083,12 +1324,13 @@ function VelonLib:CreateWindow(options)
             }
 
             local function createPreview()
+                local previewHeight = window.MobileMode and math.min(options.Height, 360) or options.Height
                 local sidePanel = create("CanvasGroup", {
-                    Parent = windowHost, Position = UDim2.new(1, 12, 0, 0), Size = UDim2.fromOffset(280, options.Height),
+                    Parent = windowHost, Position = UDim2.new(1, 12, 0, 0), Size = UDim2.fromOffset(280, previewHeight),
                     BackgroundTransparency = 1, GroupTransparency = 1, Visible = false, ZIndex = 25,
                 })
                 local card = create("Frame", {
-                    Parent = sidePanel, Size = UDim2.fromOffset(280, options.Height),
+                    Parent = sidePanel, Size = UDim2.fromOffset(280, previewHeight),
                     BackgroundColor3 = theme.Surface, ZIndex = 26,
                 }, {corner(10), stroke(theme.Border, 0.58)})
                 create("TextLabel", {
@@ -1511,6 +1753,7 @@ function VelonLib:CreateWindow(options)
     local mainConfig = merge({Name = "Main", Icon = "home"}, options.MainTab)
     window.MainTab = window:CreateTab(mainConfig)
     window:SelectTab(window.MainTab)
+    window:SetMobileMode(touchInputPreferred())
 
     windowHost.Position = UDim2.fromScale(0.5, 0.53)
     tween(root, 0.42, {GroupTransparency = 0}, Enum.EasingStyle.Quart)
