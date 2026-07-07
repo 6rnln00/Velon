@@ -257,45 +257,45 @@ end
 
 function VelonLib:ShowSplash(options)
     options = merge({
-        Enabled = true, Duration = 2.4, Title = "VelonLib",
+        Enabled = true, Duration = 1.8, Title = "VelonLib",
         Subtitle = "Loading interface", Icon = "moon",
     }, options)
     if options.Enabled == false then return end
     local gui = makeScreenGui("VelonLib_Splash", 110)
     local holder = create("CanvasGroup", {
         Parent = gui, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.53),
-        Size = UDim2.fromOffset(820, 520), BackgroundColor3 = COLORS.Background,
+        Size = UDim2.fromOffset(420, 130), BackgroundTransparency = 1,
         GroupTransparency = 1, ZIndex = 20,
-    }, {corner(14)})
-    bindResponsiveScale(gui, holder, 844, 544)
+    })
+    bindResponsiveScale(gui, holder, 450, 160)
     local card = create("Frame", {
         Parent = holder, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
-        Size = UDim2.fromOffset(430, 184), BackgroundColor3 = COLORS.Surface, ZIndex = 21,
-    }, {corner(14), stroke(COLORS.Border, 0.58)})
+        Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 21,
+    })
     local cardScale = create("UIScale", {Parent = card, Scale = 0.96})
     local title = create("TextLabel", {
-        Parent = card, Position = UDim2.fromOffset(24, 27), Size = UDim2.new(1, -48, 0, 28),
+        Parent = card, Position = UDim2.fromOffset(24, 2), Size = UDim2.new(1, -48, 0, 28),
         BackgroundTransparency = 1, Font = Enum.Font.GothamBold, Text = options.Title,
         TextColor3 = COLORS.Text, TextSize = 20, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 22,
     })
     local subtitle = create("TextLabel", {
-        Parent = card, Position = UDim2.fromOffset(24, 58), Size = UDim2.new(1, -48, 0, 20),
+        Parent = card, Position = UDim2.fromOffset(24, 34), Size = UDim2.new(1, -48, 0, 20),
         BackgroundTransparency = 1, Font = Enum.Font.Gotham, Text = options.Subtitle,
         TextColor3 = COLORS.Muted, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 22,
     })
     local status = create("TextLabel", {
-        Parent = card, Position = UDim2.fromOffset(24, 96), Size = UDim2.new(1, -96, 0, 20),
+        Parent = card, Position = UDim2.fromOffset(24, 68), Size = UDim2.new(1, -96, 0, 20),
         BackgroundTransparency = 1, Font = Enum.Font.GothamMedium, Text = "Preparing interface",
         TextColor3 = COLORS.Text, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 22,
     })
     local percentage = create("TextLabel", {
-        Parent = card, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -24, 0, 96),
+        Parent = card, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -24, 0, 68),
         Size = UDim2.fromOffset(52, 20), BackgroundTransparency = 1, Font = Enum.Font.GothamMedium,
         Text = "0%", TextColor3 = COLORS.Muted, TextSize = 11,
         TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 22,
     })
     local progressTrack = create("Frame", {
-        Parent = card, Position = UDim2.fromOffset(24, 128), Size = UDim2.new(1, -48, 0, 5),
+        Parent = card, Position = UDim2.fromOffset(24, 101), Size = UDim2.new(1, -48, 0, 4),
         BackgroundColor3 = COLORS.Surface3, BorderSizePixel = 0, ZIndex = 22,
     }, {corner(3)})
     local progressFill = create("Frame", {
@@ -306,16 +306,11 @@ function VelonLib:ShowSplash(options)
         Parent = progressFill,
         Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(190, 190, 196)),
     })
-    create("TextLabel", {
-        Parent = card, Position = UDim2.fromOffset(24, 145), Size = UDim2.new(1, -48, 0, 18),
-        BackgroundTransparency = 1, Font = Enum.Font.Gotham, Text = "VELONLIB",
-        TextColor3 = COLORS.Muted, TextSize = 9, TextXAlignment = Enum.TextXAlignment.Center, ZIndex = 22,
-    })
     local progressValue = create("NumberValue", {Value = 0})
     local progressConnection = progressValue.Changed:Connect(function(value)
         percentage.Text = tostring(math.floor(value + 0.5)) .. "%"
     end)
-    local duration = math.max(tonumber(options.Duration) or 2.4, 0.8)
+    local duration = math.max(tonumber(options.Duration) or 1.8, 0.7)
     title.TextTransparency, subtitle.TextTransparency = 1, 1
     tween(holder, 0.42, {GroupTransparency = 0, Position = UDim2.fromScale(0.5, 0.5)}, Enum.EasingStyle.Quart)
     tween(cardScale, 0.48, {Scale = 1}, Enum.EasingStyle.Back)
@@ -345,10 +340,10 @@ end
 
 function VelonLib:CreateKeySystem(options)
     options = merge({
-        Title = "VelonLib", Subtitle = "Enter your access key", Icon = "key-round",
+        Title = "VelonLib", Subtitle = "Key System", Icon = "key-round",
         KeyLink = "", Placeholder = "Enter key...", ButtonText = "Verify key",
-        GetKeyText = "Get key", Validate = nil,
-        Splash = {Enabled = true, Duration = 2.4},
+        GetKeyText = "Discord", Note = "Join the Discord server, get your key, then paste it on the left.", Validate = nil,
+        Splash = {Enabled = true, Duration = 1.8},
     }, options)
     assert(type(options.Validate) == "function", "CreateKeySystem requires Validate(key)")
 
@@ -356,7 +351,7 @@ function VelonLib:CreateKeySystem(options)
         pcall(GLOBAL_ENV.__VELONLIB_CANCEL_KEY_SYSTEM)
     end
     GLOBAL_ENV.__VELONLIB_CANCEL_KEY_SYSTEM = nil
-    local splashOptions = merge({Enabled = true, Duration = 2.4}, options.Splash)
+    local splashOptions = merge({Enabled = true, Duration = 1.8}, options.Splash)
     splashOptions.Icon = splashOptions.Icon or options.Icon
     splashOptions.Title = splashOptions.Title or options.Title
     splashOptions.Subtitle = splashOptions.Subtitle or "Loading secure access"
@@ -365,13 +360,21 @@ function VelonLib:CreateKeySystem(options)
     local dim = create("Frame", {Parent = gui, Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1})
     local panel = create("CanvasGroup", {
         Parent = dim, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
-        Size = UDim2.fromOffset(410, 286), BackgroundColor3 = COLORS.Surface,
+        Size = UDim2.fromOffset(586, 352), BackgroundColor3 = COLORS.Background,
         GroupTransparency = 1, Active = true,
-    }, {corner(14)})
-    local keyScale = bindResponsiveScale(gui, panel, 440, 320)
+    }, {corner(16), stroke(COLORS.Border, 0.35)})
+    local keyScale = bindResponsiveScale(gui, panel, 616, 382)
+    local topbar = create("Frame", {Parent = panel, Size = UDim2.new(1, 0, 0, 44), BackgroundColor3 = COLORS.Surface, BorderSizePixel = 0, ZIndex = 4})
+    create("Frame", {Parent = topbar, Position = UDim2.new(0, 0, 1, -1), Size = UDim2.new(1, 0, 0, 1), BackgroundColor3 = COLORS.Border, BackgroundTransparency = 0.4, BorderSizePixel = 0, ZIndex = 5})
+    local lights = {Color3.fromRGB(255, 95, 86), Color3.fromRGB(255, 189, 46), Color3.fromRGB(39, 201, 63)}
+    for index, color in ipairs(lights) do
+        create("Frame", {Parent = topbar, Position = UDim2.fromOffset(17 + ((index - 1) * 19), 17), Size = UDim2.fromOffset(11, 11), BackgroundColor3 = color, ZIndex = 6}, {corner(6)})
+    end
+    local minimizeKey = create("TextButton", {Parent = topbar, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -48, 0, 7), Size = UDim2.fromOffset(34, 30), AutoButtonColor = false, BackgroundColor3 = COLORS.Surface2, Font = Enum.Font.GothamBold, Text = "–", TextColor3 = COLORS.Muted, TextSize = 16, ZIndex = 7}, {corner(8)})
+    local closeKey = create("TextButton", {Parent = topbar, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -8, 0, 7), Size = UDim2.fromOffset(34, 30), AutoButtonColor = false, BackgroundColor3 = COLORS.Surface2, Font = Enum.Font.GothamBold, Text = "×", TextColor3 = COLORS.Muted, TextSize = 16, ZIndex = 7}, {corner(8)})
 
     local dragHandle = create("Frame", {
-        Parent = panel, Size = UDim2.new(1, 0, 0, 78), BackgroundTransparency = 1,
+        Parent = topbar, Size = UDim2.new(1, -96, 1, 0), BackgroundTransparency = 1,
         Active = true, ZIndex = 8,
     })
     local dragging, dragStart, startPosition = false, nil, nil
@@ -391,18 +394,18 @@ function VelonLib:CreateKeySystem(options)
     end)
     gui.Destroying:Connect(function() dragConnection:Disconnect() end)
 
-    local logoHolder = create("Frame", {Parent = panel, Position = UDim2.fromOffset(24, 24), Size = UDim2.fromOffset(44, 44), BackgroundColor3 = COLORS.Surface3}, {corner(11)})
-    local logo = makeIcon(logoHolder, options.Icon, 22, COLORS.Text, 3)
-    logo.AnchorPoint, logo.Position = Vector2.new(0.5, 0.5), UDim2.fromScale(0.5, 0.5)
-    create("TextLabel", {Parent = panel, BackgroundTransparency = 1, Position = UDim2.fromOffset(80, 23), Size = UDim2.new(1, -104, 0, 24), Font = Enum.Font.GothamBold, Text = options.Title, TextColor3 = COLORS.Text, TextSize = 18, TextXAlignment = Enum.TextXAlignment.Left})
-    create("TextLabel", {Parent = panel, BackgroundTransparency = 1, Position = UDim2.fromOffset(80, 48), Size = UDim2.new(1, -104, 0, 18), Font = Enum.Font.Gotham, Text = options.Subtitle, TextColor3 = COLORS.Muted, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left})
-
-    local inputHolder = create("Frame", {Parent = panel, Position = UDim2.fromOffset(24, 89), Size = UDim2.new(1, -48, 0, 48), BackgroundColor3 = COLORS.Background}, {corner(9), stroke(COLORS.Border, 0.15), padding(14, 14, 0, 0)})
+    create("TextLabel", {Parent = panel, BackgroundTransparency = 1, Position = UDim2.fromOffset(34, 64), Size = UDim2.fromOffset(287, 28), Font = Enum.Font.GothamBold, Text = options.Title, TextColor3 = COLORS.Text, TextSize = 20, TextXAlignment = Enum.TextXAlignment.Left})
+    create("TextLabel", {Parent = panel, BackgroundTransparency = 1, Position = UDim2.fromOffset(34, 93), Size = UDim2.fromOffset(287, 20), Font = Enum.Font.Gotham, Text = options.Subtitle, TextColor3 = COLORS.Muted, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left})
+    create("Frame", {Parent = panel, Position = UDim2.fromOffset(340, 120), Size = UDim2.fromOffset(1, 202), BackgroundColor3 = COLORS.Border, BorderSizePixel = 0})
+    create("TextLabel", {Parent = panel, BackgroundTransparency = 1, Position = UDim2.fromOffset(34, 123), Size = UDim2.fromOffset(287, 18), Font = Enum.Font.GothamBold, Text = "KEY", TextColor3 = COLORS.Muted, TextSize = 10, TextXAlignment = Enum.TextXAlignment.Left})
+    local inputHolder = create("Frame", {Parent = panel, Position = UDim2.fromOffset(34, 146), Size = UDim2.fromOffset(287, 52), BackgroundColor3 = COLORS.Surface2}, {corner(9), stroke(COLORS.Border, 0.55), padding(14, 14, 0, 0)})
     local keyBox = create("TextBox", {Parent = inputHolder, Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ClearTextOnFocus = false, Font = Enum.Font.Gotham, PlaceholderText = options.Placeholder, PlaceholderColor3 = COLORS.Muted, Text = "", TextColor3 = COLORS.Text, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left})
-    local status = create("TextLabel", {Parent = panel, BackgroundTransparency = 1, Position = UDim2.fromOffset(24, 143), Size = UDim2.new(1, -48, 0, 20), Font = Enum.Font.Gotham, Text = "", TextColor3 = COLORS.Muted, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left})
-
-    local verify = create("TextButton", {Parent = panel, Position = UDim2.fromOffset(24, 174), Size = UDim2.new(1, -48, 0, 44), AutoButtonColor = false, BackgroundColor3 = COLORS.Accent, Font = Enum.Font.GothamSemibold, Text = options.ButtonText, TextColor3 = COLORS.AccentText, TextSize = 13}, {corner(9)})
-    local getKey = create("TextButton", {Parent = panel, Position = UDim2.fromOffset(24, 226), Size = UDim2.new(1, -48, 0, 36), AutoButtonColor = false, BackgroundColor3 = COLORS.Surface2, Font = Enum.Font.GothamMedium, Text = options.GetKeyText, TextColor3 = COLORS.Text, TextSize = 12}, {corner(9), stroke(COLORS.Border, 0.2)})
+    local verify = create("TextButton", {Parent = panel, Position = UDim2.fromOffset(34, 208), Size = UDim2.fromOffset(287, 46), AutoButtonColor = false, BackgroundColor3 = COLORS.Accent, Font = Enum.Font.GothamBold, Text = options.ButtonText, TextColor3 = COLORS.AccentText, TextSize = 13}, {corner(9)})
+    local status = create("TextLabel", {Parent = panel, BackgroundTransparency = 1, Position = UDim2.fromOffset(34, 271), Size = UDim2.fromOffset(287, 20), Font = Enum.Font.Gotham, Text = "Waiting for key.", TextColor3 = COLORS.Muted, TextSize = 11, TextXAlignment = Enum.TextXAlignment.Left})
+    create("TextLabel", {Parent = panel, BackgroundTransparency = 1, Position = UDim2.fromOffset(359, 123), Size = UDim2.fromOffset(209, 18), Font = Enum.Font.GothamBold, Text = "NOTE", TextColor3 = COLORS.Muted, TextSize = 10, TextXAlignment = Enum.TextXAlignment.Left})
+    create("TextLabel", {Parent = panel, BackgroundTransparency = 1, Position = UDim2.fromOffset(359, 146), Size = UDim2.fromOffset(209, 58), Font = Enum.Font.Gotham, Text = options.Note, TextColor3 = COLORS.Muted, TextSize = 11, TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top})
+    create("TextLabel", {Parent = panel, BackgroundTransparency = 1, Position = UDim2.fromOffset(359, 224), Size = UDim2.fromOffset(209, 18), Font = Enum.Font.GothamBold, Text = "LINKS", TextColor3 = COLORS.Muted, TextSize = 10, TextXAlignment = Enum.TextXAlignment.Left})
+    local getKey = create("TextButton", {Parent = panel, Position = UDim2.fromOffset(359, 248), Size = UDim2.fromOffset(209, 46), AutoButtonColor = false, BackgroundColor3 = Color3.fromRGB(78, 87, 255), Font = Enum.Font.GothamBold, Text = options.GetKeyText, TextColor3 = Color3.new(1, 1, 1), TextSize = 13}, {corner(9)})
 
     local finished = Instance.new("BindableEvent")
     local busy = false
@@ -439,6 +442,16 @@ function VelonLib:CreateKeySystem(options)
         clearCancellation()
         task.defer(function() finished:Fire(false) end)
     end)
+    local keyMinimized = false
+    minimizeKey.MouseButton1Click:Connect(function()
+        keyMinimized = not keyMinimized
+        tween(panel, 0.28, {Size = UDim2.fromOffset(586, keyMinimized and 44 or 352)}, Enum.EasingStyle.Quart)
+    end)
+    closeKey.MouseButton1Click:Connect(function() finish(false) end)
+    minimizeKey.MouseEnter:Connect(function() tween(minimizeKey, 0.14, {BackgroundColor3 = COLORS.Surface3, TextColor3 = COLORS.Text}) end)
+    minimizeKey.MouseLeave:Connect(function() tween(minimizeKey, 0.14, {BackgroundColor3 = COLORS.Surface2, TextColor3 = COLORS.Muted}) end)
+    closeKey.MouseEnter:Connect(function() tween(closeKey, 0.14, {BackgroundColor3 = COLORS.Danger, TextColor3 = Color3.new(1, 1, 1)}) end)
+    closeKey.MouseLeave:Connect(function() tween(closeKey, 0.14, {BackgroundColor3 = COLORS.Surface2, TextColor3 = COLORS.Muted}) end)
     local function validate()
         if busy or keyBox.Text == "" then return end
         busy = true
@@ -455,9 +468,10 @@ function VelonLib:CreateKeySystem(options)
                 finish(true)
             else
                 status.Text, status.TextColor3 = resultMessage or (ok and "Invalid key" or "Validation failed"), COLORS.Danger
-                tween(panel, 0.06, {Position = UDim2.new(0.5, -7, 0.5, 0)}, Enum.EasingStyle.Linear)
+                local currentPosition = panel.Position
+                tween(panel, 0.06, {Position = UDim2.new(currentPosition.X.Scale, currentPosition.X.Offset - 7, currentPosition.Y.Scale, currentPosition.Y.Offset)}, Enum.EasingStyle.Linear)
                 task.wait(0.06)
-                tween(panel, 0.12, {Position = UDim2.fromScale(0.5, 0.5)}, Enum.EasingStyle.Bounce)
+                tween(panel, 0.12, {Position = currentPosition}, Enum.EasingStyle.Bounce)
                 busy = false
                 tween(verify, 0.18, {BackgroundColor3 = COLORS.Accent, TextColor3 = COLORS.AccentText})
             end
@@ -467,9 +481,9 @@ function VelonLib:CreateKeySystem(options)
     keyBox.FocusLost:Connect(function(enterPressed) if enterPressed then validate() end end)
     getKey.MouseButton1Click:Connect(function()
         if options.KeyLink ~= "" then
-            local copied = copyText(options.KeyLink)
-            status.Text = copied and "Key link copied" or "Clipboard is not supported"
-            status.TextColor3 = copied and COLORS.Success or COLORS.Danger
+            local success, message = openDiscord(options.KeyLink)
+            status.Text = message
+            status.TextColor3 = success and COLORS.Success or COLORS.Danger
         end
     end)
     verify.MouseEnter:Connect(function() if not busy then tween(verify, 0.15, {BackgroundColor3 = Color3.fromRGB(220, 220, 224)}) end end)
@@ -508,11 +522,13 @@ function VelonLib:CreateWindow(options)
         Title = "VelonLib", Subtitle = "Modern interface", Icon = "moon",
         Link = "", ToggleKey = Enum.KeyCode.RightShift,
         MainTab = {Name = "Main", Icon = "home"},
-        Splash = {Enabled = true, Duration = 2.4, Text = "VelonLib"},
+        Splash = {Enabled = true, Duration = 1.8, Text = "VelonLib"},
         Theme = {}, Width = 820, Height = 520,
     }, options)
     options.Width = math.max(tonumber(options.Width) or 820, 640)
     options.Height = math.max(tonumber(options.Height) or 520, 420)
+    if type(options.ToggleKey) == "string" then options.ToggleKey = Enum.KeyCode[options.ToggleKey] end
+    if typeof(options.ToggleKey) ~= "EnumItem" then options.ToggleKey = Enum.KeyCode.RightShift end
     if options.Splash and options.Splash.Enabled ~= false then
         self:ShowSplash({
             Enabled = true,
@@ -672,9 +688,9 @@ function VelonLib:CreateWindow(options)
         window:Notify({Title = "Community", Content = message, Icon = "link"})
     end)
     minimizeButton.MouseButton1Click:Connect(function() window:Minimize() end)
-    closeButton.MouseButton1Click:Connect(function() window:Destroy() end)
-    table.insert(window.Connections, UserInputService.InputBegan:Connect(function(input, processed)
-        if not processed and input.KeyCode == options.ToggleKey then window:Toggle() end
+    closeButton.MouseButton1Click:Connect(function() window:SetVisible(false) end)
+    table.insert(window.Connections, UserInputService.InputBegan:Connect(function(input)
+        if input.KeyCode == options.ToggleKey and (not window.Visible or UserInputService:GetFocusedTextBox() == nil) then window:Toggle() end
     end))
 
     setTabPreviews = function(tab, visible)
