@@ -268,31 +268,91 @@ function VelonLib:ShowSplash(options)
         GroupTransparency = 1, ZIndex = 20,
     }, {corner(14)})
     bindResponsiveScale(gui, holder, 844, 544)
-    local icon = makeIcon(holder, options.Icon, 42, COLORS.Text, 21)
-    icon.AnchorPoint, icon.Position = Vector2.new(0.5, 0.5), UDim2.fromScale(0.5, 0.45)
+    local ambient = create("Frame", {
+        Parent = holder, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
+        Size = UDim2.fromOffset(520, 300), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+        BackgroundTransparency = 0.97, ZIndex = 20,
+    }, {corner(150)})
+    local card = create("Frame", {
+        Parent = holder, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
+        Size = UDim2.fromOffset(460, 218), BackgroundColor3 = COLORS.Surface, ZIndex = 21,
+    }, {corner(16), stroke(COLORS.Border, 0.48)})
+    local cardScale = create("UIScale", {Parent = card, Scale = 0.94})
+    local logoHolder = create("Frame", {
+        Parent = card, Position = UDim2.fromOffset(24, 22), Size = UDim2.fromOffset(52, 52),
+        BackgroundColor3 = COLORS.Surface3, ZIndex = 22,
+    }, {corner(13)})
+    local icon = makeIcon(logoHolder, options.Icon, 27, COLORS.Text, 23)
+    icon.AnchorPoint, icon.Position = Vector2.new(0.5, 0.5), UDim2.fromScale(0.5, 0.5)
     local title = create("TextLabel", {
-        Parent = holder, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0.55),
-        Size = UDim2.fromOffset(360, 28), BackgroundTransparency = 1,
-        Font = Enum.Font.GothamBold, Text = options.Title, TextColor3 = COLORS.Text, TextSize = 18, ZIndex = 21,
+        Parent = card, Position = UDim2.fromOffset(90, 23), Size = UDim2.new(1, -114, 0, 26),
+        BackgroundTransparency = 1, Font = Enum.Font.GothamBold, Text = options.Title,
+        TextColor3 = COLORS.Text, TextSize = 18, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 22,
     })
     local subtitle = create("TextLabel", {
-        Parent = holder, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0.62),
-        Size = UDim2.fromOffset(360, 22), BackgroundTransparency = 1,
-        Font = Enum.Font.Gotham, Text = options.Subtitle, TextColor3 = COLORS.Muted, TextSize = 12, ZIndex = 21,
+        Parent = card, Position = UDim2.fromOffset(90, 49), Size = UDim2.new(1, -114, 0, 20),
+        BackgroundTransparency = 1, Font = Enum.Font.Gotham, Text = options.Subtitle,
+        TextColor3 = COLORS.Muted, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 22,
     })
-    icon.Size = UDim2.fromOffset(28, 28)
+    create("Frame", {
+        Parent = card, Position = UDim2.fromOffset(24, 91), Size = UDim2.new(1, -48, 0, 1),
+        BackgroundColor3 = COLORS.Border, BackgroundTransparency = 0.3, BorderSizePixel = 0, ZIndex = 22,
+    })
+    local status = create("TextLabel", {
+        Parent = card, Position = UDim2.fromOffset(24, 108), Size = UDim2.new(1, -96, 0, 20),
+        BackgroundTransparency = 1, Font = Enum.Font.GothamMedium, Text = "Preparing interface",
+        TextColor3 = COLORS.Text, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 22,
+    })
+    local percentage = create("TextLabel", {
+        Parent = card, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -24, 0, 108),
+        Size = UDim2.fromOffset(52, 20), BackgroundTransparency = 1, Font = Enum.Font.GothamMedium,
+        Text = "0%", TextColor3 = COLORS.Muted, TextSize = 11,
+        TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 22,
+    })
+    local progressTrack = create("Frame", {
+        Parent = card, Position = UDim2.fromOffset(24, 142), Size = UDim2.new(1, -48, 0, 7),
+        BackgroundColor3 = COLORS.Surface3, BorderSizePixel = 0, ZIndex = 22,
+    }, {corner(4)})
+    local progressFill = create("Frame", {
+        Parent = progressTrack, Size = UDim2.fromScale(0, 1), BackgroundColor3 = COLORS.Accent,
+        BorderSizePixel = 0, ZIndex = 23,
+    }, {corner(4)})
+    create("UIGradient", {
+        Parent = progressFill,
+        Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(170, 170, 178)),
+    })
+    create("TextLabel", {
+        Parent = card, Position = UDim2.fromOffset(24, 170), Size = UDim2.new(1, -48, 0, 20),
+        BackgroundTransparency = 1, Font = Enum.Font.Gotham, Text = "VELON  /  SECURE LOADER",
+        TextColor3 = COLORS.Muted, TextSize = 9, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 22,
+    })
+    local progressValue = create("NumberValue", {Value = 0})
+    local progressConnection = progressValue.Changed:Connect(function(value)
+        percentage.Text = tostring(math.floor(value + 0.5)) .. "%"
+    end)
+    local duration = math.max(tonumber(options.Duration) or 1.5, 0.6)
     title.TextTransparency, subtitle.TextTransparency = 1, 1
     tween(holder, 0.42, {GroupTransparency = 0, Position = UDim2.fromScale(0.5, 0.5)}, Enum.EasingStyle.Quart)
-    tween(icon, 0.55, {Size = UDim2.fromOffset(42, 42), Rotation = 360}, Enum.EasingStyle.Back)
+    tween(cardScale, 0.48, {Scale = 1}, Enum.EasingStyle.Back)
+    tween(icon, 0.55, {Rotation = 360}, Enum.EasingStyle.Back)
     tween(title, 0.38, {TextTransparency = 0})
     tween(subtitle, 0.46, {TextTransparency = 0})
-    task.wait(math.max(tonumber(options.Duration) or 1.5, 0.3))
+    tween(progressFill, duration, {Size = UDim2.fromScale(1, 1)}, Enum.EasingStyle.Quart)
+    tween(progressValue, duration, {Value = 100}, Enum.EasingStyle.Linear)
+    task.delay(duration * 0.34, function() if status.Parent then status.Text = "Loading components" end end)
+    task.delay(duration * 0.72, function() if status.Parent then status.Text = "Finalizing session" end end)
+    task.wait(duration)
     if gui.Parent then
+        status.Text = "Ready"
+        percentage.Text = "100%"
+        task.wait(0.12)
         tween(holder, 0.35, {GroupTransparency = 1, Position = UDim2.fromScale(0.5, 0.47)})
-        tween(icon, 0.35, {Size = UDim2.fromOffset(58, 58)})
+        tween(cardScale, 0.35, {Scale = 0.96})
         task.wait(0.37)
         gui:Destroy()
     end
+    progressConnection:Disconnect()
+    progressValue:Destroy()
 end
 
 function VelonLib:CreateKeySystem(options)
@@ -475,13 +535,18 @@ function VelonLib:CreateWindow(options)
     table.insert(self.Windows, window)
 
     local overlay = create("Frame", {Parent = gui, Name = "ESPOverlay", Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 2})
+    local windowHost = create("Frame", {
+        Parent = gui, Name = "WindowHost", AnchorPoint = Vector2.new(0.5, 0.5),
+        Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(options.Width, options.Height),
+        BackgroundTransparency = 1, ZIndex = 20,
+    })
     local root = create("CanvasGroup", {
-        Parent = gui, Name = "Window", AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
-        Size = UDim2.fromOffset(options.Width, options.Height), BackgroundColor3 = theme.Background,
+        Parent = windowHost, Name = "Window", Position = UDim2.fromOffset(0, 0),
+        Size = UDim2.fromScale(1, 1), BackgroundColor3 = theme.Background,
         GroupTransparency = 1, ZIndex = 20,
     }, {corner(14)})
-    local scale = bindResponsiveScale(gui, root, options.Width + 24, options.Height + 24)
-    window.Root, window.Scale, window.Overlay = root, scale, overlay
+    local scale = bindResponsiveScale(gui, windowHost, options.Width + 24, options.Height + 24)
+    window.Host, window.Root, window.Scale, window.Overlay = windowHost, root, scale, overlay
 
     local topbar = create("Frame", {Parent = root, Size = UDim2.new(1, 0, 0, 58), BackgroundColor3 = theme.Surface, BorderSizePixel = 0, ZIndex = 22})
     create("Frame", {Parent = topbar, Position = UDim2.new(0, 0, 1, -1), Size = UDim2.new(1, 0, 0, 1), BackgroundColor3 = theme.Border, BackgroundTransparency = 0.72, BorderSizePixel = 0, ZIndex = 23})
@@ -518,14 +583,14 @@ function VelonLib:CreateWindow(options)
     local dragging, dragStart, startPosition
     topbar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging, dragStart, startPosition = true, input.Position, root.Position
+            dragging, dragStart, startPosition = true, input.Position, windowHost.Position
             input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end)
         end
     end)
     table.insert(window.Connections, UserInputService.InputChanged:Connect(function(input)
         if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             local delta = (input.Position - dragStart) / scale.Scale
-            root.Position = UDim2.new(startPosition.X.Scale, startPosition.X.Offset + delta.X, startPosition.Y.Scale, startPosition.Y.Offset + delta.Y)
+            windowHost.Position = UDim2.new(startPosition.X.Scale, startPosition.X.Offset + delta.X, startPosition.Y.Scale, startPosition.Y.Offset + delta.Y)
         end
     end))
 
@@ -560,12 +625,12 @@ function VelonLib:CreateWindow(options)
         self.Visible = visible
         if setTabPreviews then setTabPreviews(self.SelectedTab, visible) end
         if visible then
-            root.Visible = true
+            windowHost.Visible = true
             root.GroupTransparency = 1
             tween(root, 0.25, {GroupTransparency = 0})
         else
             tween(root, 0.2, {GroupTransparency = 1})
-            task.delay(0.21, function() if root.Parent and not self.Visible then root.Visible = false end end)
+            task.delay(0.21, function() if windowHost.Parent and not self.Visible then windowHost.Visible = false end end)
         end
     end
     function window:Toggle() self:SetVisible(not self.Visible) end
@@ -576,7 +641,7 @@ function VelonLib:CreateWindow(options)
         local targetHeight = state and 58 or options.Height
         if not state then sidebar.Visible, content.Visible = true, true end
         if setTabPreviews then setTabPreviews(self.SelectedTab, not state) end
-        tween(root, 0.35, {Size = UDim2.fromOffset(options.Width, targetHeight)}, Enum.EasingStyle.Quart)
+        tween(windowHost, 0.35, {Size = UDim2.fromOffset(options.Width, targetHeight)}, Enum.EasingStyle.Quart)
         if state then task.delay(0.16, function() if self.Minimized then sidebar.Visible, content.Visible = false, false end end) end
     end
     function window:Destroy(fromGuiDestroy)
@@ -589,8 +654,9 @@ function VelonLib:CreateWindow(options)
         end
         if fromGuiDestroy then
             return
-        elseif root.Parent then
-            tween(root, 0.2, {GroupTransparency = 1, Position = UDim2.new(root.Position.X.Scale, root.Position.X.Offset, root.Position.Y.Scale, root.Position.Y.Offset + 20)})
+        elseif windowHost.Parent then
+            tween(root, 0.2, {GroupTransparency = 1})
+            tween(windowHost, 0.2, {Position = UDim2.new(windowHost.Position.X.Scale, windowHost.Position.X.Offset, windowHost.Position.Y.Scale, windowHost.Position.Y.Offset + 20)})
             task.delay(0.22, function() if gui and gui.Parent then gui:Destroy() end end)
         elseif gui and gui.Parent then
             gui:Destroy()
@@ -1002,30 +1068,14 @@ function VelonLib:CreateWindow(options)
             }
 
             local function createPreview()
-                local host = create("CanvasGroup", {
-                    Parent = gui, Position = UDim2.fromOffset(0, 0), Size = UDim2.fromOffset(280, options.Height),
+                local sidePanel = create("CanvasGroup", {
+                    Parent = windowHost, Position = UDim2.new(1, 12, 0, 0), Size = UDim2.fromOffset(280, options.Height),
                     BackgroundTransparency = 1, GroupTransparency = 1, Visible = false, ZIndex = 25,
                 })
                 local card = create("Frame", {
-                    Parent = host, Size = UDim2.fromOffset(280, options.Height),
+                    Parent = sidePanel, Size = UDim2.fromOffset(280, options.Height),
                     BackgroundColor3 = theme.Surface, ZIndex = 26,
                 }, {corner(10), stroke(theme.Border, 0.58)})
-                local previewScale = create("UIScale", {Parent = card, Scale = scale.Scale})
-                local function syncPreviewPosition()
-                    if not host.Parent or not root.Parent then return end
-                    local displayScale = math.max(topbar.AbsoluteSize.X / options.Width, 0.01)
-                    previewScale.Scale = displayScale
-                    local camera = workspace.CurrentCamera
-                    local viewport = camera and camera.ViewportSize or Vector2.new(1920, 1080)
-                    local panelWidth = 280 * displayScale
-                    local panelHeight = topbar.AbsoluteSize.Y + sidebar.AbsoluteSize.Y
-                    local positionX = topbar.AbsolutePosition.X + topbar.AbsoluteSize.X + (12 * displayScale)
-                    local positionY = topbar.AbsolutePosition.Y
-                    positionX = math.clamp(positionX, 8, math.max(8, viewport.X - panelWidth - 8))
-                    positionY = math.clamp(positionY, 8, math.max(8, viewport.Y - panelHeight - 8))
-                    host.Position = UDim2.fromOffset(positionX, positionY)
-                    host.Size = UDim2.fromOffset(panelWidth, panelHeight)
-                end
                 create("TextLabel", {
                     Parent = card, BackgroundTransparency = 1, Position = UDim2.fromOffset(14, 8),
                     Size = UDim2.new(1, -120, 0, 28), Font = Enum.Font.GothamSemibold,
@@ -1075,17 +1125,13 @@ function VelonLib:CreateWindow(options)
                 local tracer = makeLine(stage, settings.TracerColor, settings.Thickness, 32)
 
                 controller.Preview = {
-                    Root = host, Card = card, Stage = stage, Avatar = avatar, Badge = badge,
+                    Root = sidePanel, Card = card, Stage = stage, Avatar = avatar, Badge = badge,
                     Name = nameLabel, Distance = distanceLabel,
                     HealthBack = healthBack, HealthFill = healthFill,
                     Box = boxLines, Skeleton = skeletonLines, Tracer = tracer,
-                    Scale = previewScale, Token = 0,
+                    Token = 0,
                 }
-                table.insert(tab.PreviewPanels, host)
-                table.insert(controller.Connections, topbar:GetPropertyChangedSignal("AbsolutePosition"):Connect(syncPreviewPosition))
-                table.insert(controller.Connections, topbar:GetPropertyChangedSignal("AbsoluteSize"):Connect(syncPreviewPosition))
-                table.insert(controller.Connections, sidebar:GetPropertyChangedSignal("AbsoluteSize"):Connect(syncPreviewPosition))
-                syncPreviewPosition()
+                table.insert(tab.PreviewPanels, sidePanel)
 
                 function controller:RefreshPreview()
                     local preview = self.Preview
@@ -1451,8 +1497,9 @@ function VelonLib:CreateWindow(options)
     window.MainTab = window:CreateTab(mainConfig)
     window:SelectTab(window.MainTab)
 
-    root.Position = UDim2.fromScale(0.5, 0.53)
-    tween(root, 0.42, {GroupTransparency = 0, Position = UDim2.fromScale(0.5, 0.5)}, Enum.EasingStyle.Quart)
+    windowHost.Position = UDim2.fromScale(0.5, 0.53)
+    tween(root, 0.42, {GroupTransparency = 0}, Enum.EasingStyle.Quart)
+    tween(windowHost, 0.42, {Position = UDim2.fromScale(0.5, 0.5)}, Enum.EasingStyle.Quart)
     if options.Splash and options.Splash.Enabled ~= false then
         local splash = create("CanvasGroup", {Parent = root, Size = UDim2.fromScale(1, 1), BackgroundColor3 = theme.Background, ZIndex = 60}, {corner(14)})
         local splashLogo = makeIcon(splash, options.Icon, 42, theme.Text, 61)
