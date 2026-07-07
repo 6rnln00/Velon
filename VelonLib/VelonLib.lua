@@ -270,59 +270,102 @@ function VelonLib:ShowSplash(options)
     bindResponsiveScale(gui, holder, 844, 544)
     local ambient = create("Frame", {
         Parent = holder, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
-        Size = UDim2.fromOffset(520, 300), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+        Size = UDim2.fromOffset(590, 360), BackgroundColor3 = Color3.fromRGB(255, 255, 255),
         BackgroundTransparency = 0.97, ZIndex = 20,
-    }, {corner(150)})
+    }, {corner(180)})
     local card = create("Frame", {
         Parent = holder, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
-        Size = UDim2.fromOffset(460, 218), BackgroundColor3 = COLORS.Surface, ZIndex = 21,
+        Size = UDim2.fromOffset(500, 270), BackgroundColor3 = COLORS.Surface, ZIndex = 21,
     }, {corner(16), stroke(COLORS.Border, 0.48)})
     local cardScale = create("UIScale", {Parent = card, Scale = 0.94})
-    local logoHolder = create("Frame", {
-        Parent = card, Position = UDim2.fromOffset(24, 22), Size = UDim2.fromOffset(52, 52),
-        BackgroundColor3 = COLORS.Surface3, ZIndex = 22,
-    }, {corner(13)})
-    local icon = makeIcon(logoHolder, options.Icon, 27, COLORS.Text, 23)
-    icon.AnchorPoint, icon.Position = Vector2.new(0.5, 0.5), UDim2.fromScale(0.5, 0.5)
+    local traffic = create("Frame", {
+        Parent = card, Position = UDim2.fromOffset(24, 22), Size = UDim2.fromOffset(72, 14),
+        BackgroundTransparency = 1, ZIndex = 22,
+    })
+    local trafficColors = {
+        Color3.fromRGB(255, 95, 86),
+        Color3.fromRGB(255, 189, 46),
+        Color3.fromRGB(39, 201, 63),
+    }
+    for index, color in ipairs(trafficColors) do
+        create("Frame", {
+            Parent = traffic, Position = UDim2.fromOffset((index - 1) * 22, 0),
+            Size = UDim2.fromOffset(12, 12), BackgroundColor3 = color, ZIndex = 23,
+        }, {corner(6)})
+    end
     local title = create("TextLabel", {
-        Parent = card, Position = UDim2.fromOffset(90, 23), Size = UDim2.new(1, -114, 0, 26),
+        Parent = card, Position = UDim2.fromOffset(24, 50), Size = UDim2.new(1, -48, 0, 26),
         BackgroundTransparency = 1, Font = Enum.Font.GothamBold, Text = options.Title,
         TextColor3 = COLORS.Text, TextSize = 18, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 22,
     })
     local subtitle = create("TextLabel", {
-        Parent = card, Position = UDim2.fromOffset(90, 49), Size = UDim2.new(1, -114, 0, 20),
+        Parent = card, Position = UDim2.fromOffset(24, 76), Size = UDim2.new(1, -48, 0, 20),
         BackgroundTransparency = 1, Font = Enum.Font.Gotham, Text = options.Subtitle,
         TextColor3 = COLORS.Muted, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 22,
     })
+    local statePill = create("TextLabel", {
+        Parent = card, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -24, 0, 18),
+        Size = UDim2.fromOffset(96, 24), BackgroundColor3 = COLORS.Surface3,
+        Font = Enum.Font.GothamBold, Text = "INITIALIZING", TextColor3 = COLORS.Muted,
+        TextSize = 9, ZIndex = 22,
+    }, {corner(7)})
     create("Frame", {
-        Parent = card, Position = UDim2.fromOffset(24, 91), Size = UDim2.new(1, -48, 0, 1),
+        Parent = card, Position = UDim2.fromOffset(24, 108), Size = UDim2.new(1, -48, 0, 1),
         BackgroundColor3 = COLORS.Border, BackgroundTransparency = 0.3, BorderSizePixel = 0, ZIndex = 22,
     })
     local status = create("TextLabel", {
-        Parent = card, Position = UDim2.fromOffset(24, 108), Size = UDim2.new(1, -96, 0, 20),
+        Parent = card, Position = UDim2.fromOffset(24, 124), Size = UDim2.new(1, -96, 0, 20),
         BackgroundTransparency = 1, Font = Enum.Font.GothamMedium, Text = "Preparing interface",
         TextColor3 = COLORS.Text, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 22,
     })
     local percentage = create("TextLabel", {
-        Parent = card, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -24, 0, 108),
+        Parent = card, AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -24, 0, 124),
         Size = UDim2.fromOffset(52, 20), BackgroundTransparency = 1, Font = Enum.Font.GothamMedium,
         Text = "0%", TextColor3 = COLORS.Muted, TextSize = 11,
         TextXAlignment = Enum.TextXAlignment.Right, ZIndex = 22,
     })
     local progressTrack = create("Frame", {
-        Parent = card, Position = UDim2.fromOffset(24, 142), Size = UDim2.new(1, -48, 0, 7),
+        Parent = card, Position = UDim2.fromOffset(24, 154), Size = UDim2.new(1, -48, 0, 7),
         BackgroundColor3 = COLORS.Surface3, BorderSizePixel = 0, ZIndex = 22,
     }, {corner(4)})
     local progressFill = create("Frame", {
         Parent = progressTrack, Size = UDim2.fromScale(0, 1), BackgroundColor3 = COLORS.Accent,
         BorderSizePixel = 0, ZIndex = 23,
     }, {corner(4)})
-    create("UIGradient", {
+    local progressGradient = create("UIGradient", {
         Parent = progressFill,
         Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(170, 170, 178)),
+        Offset = Vector2.new(-1, 0),
     })
+    local modules = create("Frame", {
+        Parent = card, Position = UDim2.fromOffset(24, 178), Size = UDim2.new(1, -48, 0, 40),
+        BackgroundTransparency = 1, ZIndex = 22,
+    })
+    create("UIListLayout", {
+        Parent = modules, FillDirection = Enum.FillDirection.Horizontal,
+        Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder,
+    })
+    local function moduleChip(label, order)
+        local chip = create("Frame", {
+            Parent = modules, LayoutOrder = order, Size = UDim2.fromOffset(145, 40),
+            BackgroundColor3 = COLORS.Surface2, ZIndex = 22,
+        }, {corner(8)})
+        local dot = create("Frame", {
+            Parent = chip, Position = UDim2.fromOffset(12, 15), Size = UDim2.fromOffset(9, 9),
+            BackgroundColor3 = COLORS.Muted, BackgroundTransparency = 0.35, ZIndex = 23,
+        }, {corner(5)})
+        create("TextLabel", {
+            Parent = chip, Position = UDim2.fromOffset(29, 0), Size = UDim2.new(1, -38, 1, 0),
+            BackgroundTransparency = 1, Font = Enum.Font.GothamMedium, Text = label,
+            TextColor3 = COLORS.Muted, TextSize = 10, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 23,
+        })
+        return dot
+    end
+    local coreDot = moduleChip("CORE", 1)
+    local interfaceDot = moduleChip("INTERFACE", 2)
+    local securityDot = moduleChip("SECURITY", 3)
     create("TextLabel", {
-        Parent = card, Position = UDim2.fromOffset(24, 170), Size = UDim2.new(1, -48, 0, 20),
+        Parent = card, Position = UDim2.fromOffset(24, 232), Size = UDim2.new(1, -48, 0, 20),
         BackgroundTransparency = 1, Font = Enum.Font.Gotham, Text = "VELON  /  SECURE LOADER",
         TextColor3 = COLORS.Muted, TextSize = 9, TextXAlignment = Enum.TextXAlignment.Left, ZIndex = 22,
     })
@@ -334,17 +377,36 @@ function VelonLib:ShowSplash(options)
     title.TextTransparency, subtitle.TextTransparency = 1, 1
     tween(holder, 0.42, {GroupTransparency = 0, Position = UDim2.fromScale(0.5, 0.5)}, Enum.EasingStyle.Quart)
     tween(cardScale, 0.48, {Scale = 1}, Enum.EasingStyle.Back)
-    tween(icon, 0.55, {Rotation = 360}, Enum.EasingStyle.Back)
+    tween(ambient, duration, {Size = UDim2.fromOffset(660, 410), BackgroundTransparency = 0.985}, Enum.EasingStyle.Quart)
     tween(title, 0.38, {TextTransparency = 0})
     tween(subtitle, 0.46, {TextTransparency = 0})
     tween(progressFill, duration, {Size = UDim2.fromScale(1, 1)}, Enum.EasingStyle.Quart)
+    tween(progressGradient, duration, {Offset = Vector2.new(1, 0)}, Enum.EasingStyle.Linear)
     tween(progressValue, duration, {Value = 100}, Enum.EasingStyle.Linear)
-    task.delay(duration * 0.34, function() if status.Parent then status.Text = "Loading components" end end)
-    task.delay(duration * 0.72, function() if status.Parent then status.Text = "Finalizing session" end end)
+    task.delay(duration * 0.2, function()
+        if coreDot.Parent then tween(coreDot, 0.2, {BackgroundColor3 = COLORS.Success, BackgroundTransparency = 0}) end
+    end)
+    task.delay(duration * 0.34, function()
+        if status.Parent then status.Text = "Loading components" end
+    end)
+    task.delay(duration * 0.5, function()
+        if interfaceDot.Parent then tween(interfaceDot, 0.2, {BackgroundColor3 = COLORS.Success, BackgroundTransparency = 0}) end
+    end)
+    task.delay(duration * 0.72, function()
+        if status.Parent then status.Text = "Finalizing session" end
+    end)
+    task.delay(duration * 0.78, function()
+        if securityDot.Parent then tween(securityDot, 0.2, {BackgroundColor3 = COLORS.Success, BackgroundTransparency = 0}) end
+    end)
     task.wait(duration)
     if gui.Parent then
         status.Text = "Ready"
         percentage.Text = "100%"
+        statePill.Text = "READY"
+        statePill.TextColor3 = COLORS.Success
+        statePill.BackgroundColor3 = Color3.fromRGB(20, 42, 28)
+        coreDot.BackgroundColor3, interfaceDot.BackgroundColor3, securityDot.BackgroundColor3 = COLORS.Success, COLORS.Success, COLORS.Success
+        coreDot.BackgroundTransparency, interfaceDot.BackgroundTransparency, securityDot.BackgroundTransparency = 0, 0, 0
         task.wait(0.12)
         tween(holder, 0.35, {GroupTransparency = 1, Position = UDim2.fromScale(0.5, 0.47)})
         tween(cardScale, 0.35, {Scale = 0.96})
