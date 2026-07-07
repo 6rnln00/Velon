@@ -257,7 +257,7 @@ end
 
 function VelonLib:ShowSplash(options)
     options = merge({
-        Enabled = true, Duration = 1.5, Title = "VelonLib",
+        Enabled = true, Duration = 2.4, Title = "VelonLib",
         Subtitle = "Loading interface", Icon = "moon",
     }, options)
     if options.Enabled == false then return end
@@ -373,7 +373,7 @@ function VelonLib:ShowSplash(options)
     local progressConnection = progressValue.Changed:Connect(function(value)
         percentage.Text = tostring(math.floor(value + 0.5)) .. "%"
     end)
-    local duration = math.max(tonumber(options.Duration) or 1.5, 0.6)
+    local duration = math.max(tonumber(options.Duration) or 2.4, 0.8)
     title.TextTransparency, subtitle.TextTransparency = 1, 1
     tween(holder, 0.42, {GroupTransparency = 0, Position = UDim2.fromScale(0.5, 0.5)}, Enum.EasingStyle.Quart)
     tween(cardScale, 0.48, {Scale = 1}, Enum.EasingStyle.Back)
@@ -422,7 +422,7 @@ function VelonLib:CreateKeySystem(options)
         Title = "VelonLib", Subtitle = "Enter your access key", Icon = "key-round",
         KeyLink = "", Placeholder = "Enter key...", ButtonText = "Verify key",
         GetKeyText = "Get key", Validate = nil,
-        Splash = {Enabled = true, Duration = 1.5},
+        Splash = {Enabled = true, Duration = 2.4},
     }, options)
     assert(type(options.Validate) == "function", "CreateKeySystem requires Validate(key)")
 
@@ -430,7 +430,7 @@ function VelonLib:CreateKeySystem(options)
         pcall(GLOBAL_ENV.__VELONLIB_CANCEL_KEY_SYSTEM)
     end
     GLOBAL_ENV.__VELONLIB_CANCEL_KEY_SYSTEM = nil
-    local splashOptions = merge({Enabled = true, Duration = 1.5}, options.Splash)
+    local splashOptions = merge({Enabled = true, Duration = 2.4}, options.Splash)
     splashOptions.Icon = splashOptions.Icon or options.Icon
     splashOptions.Title = splashOptions.Title or options.Title
     splashOptions.Subtitle = splashOptions.Subtitle or "Loading secure access"
@@ -582,17 +582,25 @@ function VelonLib:CreateWindow(options)
         Title = "VelonLib", Subtitle = "Modern interface", Icon = "moon",
         Link = "", ToggleKey = Enum.KeyCode.RightShift,
         MainTab = {Name = "Main", Icon = "home"},
-        Splash = {Enabled = true, Duration = 1.6, Text = "VelonLib"},
+        Splash = {Enabled = true, Duration = 2.4, Text = "VelonLib"},
         Theme = {}, Width = 820, Height = 520,
     }, options)
     options.Width = math.max(tonumber(options.Width) or 820, 640)
     options.Height = math.max(tonumber(options.Height) or 520, 420)
+    if options.Splash and options.Splash.Enabled ~= false then
+        self:ShowSplash({
+            Enabled = true,
+            Duration = options.Splash.Duration or 1.6,
+            Title = options.Splash.Title or options.Splash.Text or options.Title,
+            Subtitle = options.Splash.Subtitle or "Preparing your interface",
+        })
+    end
     local theme = merge(COLORS, options.Theme)
     local gui = makeScreenGui("VelonLib_UI", 60)
     local window = {
         Gui = gui, Options = options, Theme = theme, Flags = {}, Tabs = {}, Connections = {},
         Destroyed = false, Minimized = false, Visible = true, ESPControllers = {},
-        SplashActive = options.Splash and options.Splash.Enabled ~= false,
+        SplashActive = false,
     }
     table.insert(self.Windows, window)
 
@@ -1562,25 +1570,6 @@ function VelonLib:CreateWindow(options)
     windowHost.Position = UDim2.fromScale(0.5, 0.53)
     tween(root, 0.42, {GroupTransparency = 0}, Enum.EasingStyle.Quart)
     tween(windowHost, 0.42, {Position = UDim2.fromScale(0.5, 0.5)}, Enum.EasingStyle.Quart)
-    if options.Splash and options.Splash.Enabled ~= false then
-        local splash = create("CanvasGroup", {Parent = root, Size = UDim2.fromScale(1, 1), BackgroundColor3 = theme.Background, ZIndex = 60}, {corner(14)})
-        local splashLogo = makeIcon(splash, options.Icon, 42, theme.Text, 61)
-        splashLogo.AnchorPoint, splashLogo.Position = Vector2.new(0.5, 0.5), UDim2.fromScale(0.5, 0.45)
-        local splashText = create("TextLabel", {Parent = splash, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0.55), Size = UDim2.fromOffset(300, 28), BackgroundTransparency = 1, Font = Enum.Font.GothamBold, Text = options.Splash.Text or options.Title, TextColor3 = theme.Text, TextSize = 18, ZIndex = 61})
-        splashLogo.Size = UDim2.fromOffset(26, 26)
-        tween(splashLogo, 0.55, {Size = UDim2.fromOffset(42, 42), Rotation = 360}, Enum.EasingStyle.Back)
-        splashText.TextTransparency = 1 tween(splashText, 0.4, {TextTransparency = 0})
-        task.delay(options.Splash.Duration or 1.6, function()
-            if splash.Parent then
-                tween(splash, 0.35, {GroupTransparency = 1})
-                tween(splashLogo, 0.35, {Size = UDim2.fromOffset(58, 58)})
-                task.wait(0.37)
-                splash:Destroy()
-            end
-            window.SplashActive = false
-            if setTabPreviews then setTabPreviews(window.SelectedTab, true) end
-        end)
-    end
 
     return window
 end
