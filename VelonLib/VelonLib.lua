@@ -1,8 +1,3 @@
--- VelonLib 1.0.0
--- Black/white Roblox UI library for loadstring environments.
--- Lucide atlas coordinates below are a curated subset of Sirius Rayfield's
--- Apache-2.0 licensed icon registry: https://github.com/SiriusSoftwareLtd/Rayfield
-
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -1018,13 +1013,14 @@ function VelonLib:CreateWindow(options)
                 local previewScale = create("UIScale", {Parent = card, Scale = scale.Scale})
                 local function syncPreviewPosition()
                     if not host.Parent or not root.Parent then return end
-                    previewScale.Scale = scale.Scale
+                    local displayScale = math.max(topbar.AbsoluteSize.X / options.Width, 0.01)
+                    previewScale.Scale = displayScale
                     local camera = workspace.CurrentCamera
                     local viewport = camera and camera.ViewportSize or Vector2.new(1920, 1080)
-                    local panelWidth = 280 * scale.Scale
-                    local panelHeight = options.Height * scale.Scale
-                    local positionX = root.AbsolutePosition.X + root.AbsoluteSize.X + (12 * scale.Scale)
-                    local positionY = root.AbsolutePosition.Y
+                    local panelWidth = 280 * displayScale
+                    local panelHeight = topbar.AbsoluteSize.Y + sidebar.AbsoluteSize.Y
+                    local positionX = topbar.AbsolutePosition.X + topbar.AbsoluteSize.X + (12 * displayScale)
+                    local positionY = topbar.AbsolutePosition.Y
                     positionX = math.clamp(positionX, 8, math.max(8, viewport.X - panelWidth - 8))
                     positionY = math.clamp(positionY, 8, math.max(8, viewport.Y - panelHeight - 8))
                     host.Position = UDim2.fromOffset(positionX, positionY)
@@ -1086,9 +1082,9 @@ function VelonLib:CreateWindow(options)
                     Scale = previewScale, Token = 0,
                 }
                 table.insert(tab.PreviewPanels, host)
-                table.insert(controller.Connections, root:GetPropertyChangedSignal("AbsolutePosition"):Connect(syncPreviewPosition))
-                table.insert(controller.Connections, root:GetPropertyChangedSignal("AbsoluteSize"):Connect(syncPreviewPosition))
-                table.insert(controller.Connections, scale:GetPropertyChangedSignal("Scale"):Connect(syncPreviewPosition))
+                table.insert(controller.Connections, topbar:GetPropertyChangedSignal("AbsolutePosition"):Connect(syncPreviewPosition))
+                table.insert(controller.Connections, topbar:GetPropertyChangedSignal("AbsoluteSize"):Connect(syncPreviewPosition))
+                table.insert(controller.Connections, sidebar:GetPropertyChangedSignal("AbsoluteSize"):Connect(syncPreviewPosition))
                 syncPreviewPosition()
 
                 function controller:RefreshPreview()
@@ -1097,10 +1093,10 @@ function VelonLib:CreateWindow(options)
                     local size = preview.Stage.AbsoluteSize
                     if size.X <= 0 or size.Y <= 0 then return end
                     local centerX = size.X / 2
-                    local top = size.Y * 0.34
-                    local bottom = size.Y * 0.77
+                    local top = size.Y * 0.36
+                    local bottom = size.Y * 0.71
                     local height = bottom - top
-                    local width = math.min(height * 0.56, size.X * 0.46)
+                    local width = math.min(height * 0.72, size.X * 0.48)
                     local left, right = centerX - width / 2, centerX + width / 2
                     local boxPoints = {
                         {Vector2.new(left, top), Vector2.new(right, top)},
