@@ -7,7 +7,7 @@ local GuiService = game:GetService("GuiService")
 
 local LocalPlayer = Players.LocalPlayer
 local VelonLib = {
-    Version = "1.1.1",
+    Version = "1.1.2",
     Flags = {},
     Windows = {},
 }
@@ -269,26 +269,37 @@ end
 local function makeScreenGui(name, displayOrder)
     local guiParent = getGuiParent()
     local old = guiParent:FindFirstChild(name)
-    if old then old:Destroy() end
-    local gui = create("ScreenGui", {
-        Name = name, ResetOnSpawn = false, IgnoreGuiInset = true,
-        ZIndexBehavior = Enum.ZIndexBehavior.Sibling, DisplayOrder = displayOrder or 50,
-    })
-    gui.Parent = guiParent
+    local reuseSplash = name == "VelonLib_Splash" and old and old:IsA("ScreenGui")
+    local gui
+    if reuseSplash then
+        gui = old
+        gui.Enabled = true
+        gui:ClearAllChildren()
+        gui.DisplayOrder = displayOrder or 50
+    else
+        if old then old:Destroy() end
+        gui = create("ScreenGui", {
+            Name = name, ResetOnSpawn = false, IgnoreGuiInset = true,
+            ZIndexBehavior = Enum.ZIndexBehavior.Sibling, DisplayOrder = displayOrder or 50,
+        })
+        gui.Parent = guiParent
+    end
     local textPreferenceConnection
-    local ok = pcall(function()
-        textPreferenceConnection = GuiService:GetPropertyChangedSignal("PreferredTextSize"):Connect(function()
-            local scale = preferredTextScale()
-            for _, item in ipairs(gui:GetDescendants()) do
-                if item:IsA("TextLabel") or item:IsA("TextButton") or item:IsA("TextBox") then
-                    local baseSize = item:GetAttribute("VelonBaseTextSize")
-                    if type(baseSize) == "number" then item.TextSize = math.floor(baseSize * scale + 0.5) end
+    if not reuseSplash then
+        local ok = pcall(function()
+            textPreferenceConnection = GuiService:GetPropertyChangedSignal("PreferredTextSize"):Connect(function()
+                local scale = preferredTextScale()
+                for _, item in ipairs(gui:GetDescendants()) do
+                    if item:IsA("TextLabel") or item:IsA("TextButton") or item:IsA("TextBox") then
+                        local baseSize = item:GetAttribute("VelonBaseTextSize")
+                        if type(baseSize) == "number" then item.TextSize = math.floor(baseSize * scale + 0.5) end
+                    end
                 end
-            end
+            end)
         end)
-    end)
-    if ok and textPreferenceConnection then
-        gui.Destroying:Connect(function() textPreferenceConnection:Disconnect() end)
+        if ok and textPreferenceConnection then
+            gui.Destroying:Connect(function() textPreferenceConnection:Disconnect() end)
+        end
     end
     return gui
 end
@@ -379,10 +390,13 @@ function VelonLib:ShowSplash(options)
         tween(holder, 0.35, {GroupTransparency = 1, Position = UDim2.fromScale(0.5, 0.47)})
         tween(cardScale, 0.35, {Scale = 0.96})
         task.wait(0.37)
-        gui:Destroy()
     end
     progressConnection:Disconnect()
     progressValue:Destroy()
+    if gui.Parent then
+        gui.Enabled = false
+        gui:ClearAllChildren()
+    end
 end
 
 function VelonLib:CreateKeySystem(options)
