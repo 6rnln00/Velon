@@ -9,7 +9,7 @@ local GuiService = game:GetService("GuiService")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local VelonLib = {
-    Version = "1.1.3",
+    Version = "1.1.4",
     Flags = {},
     Windows = {},
 }
@@ -259,7 +259,7 @@ local function bindResponsiveScale(screenGui, root, baseWidth, baseHeight)
     end
     screenGui.Destroying:Connect(cleanup)
     root.Destroying:Connect(cleanup)
-    return scaler
+    return scaler, cleanup
 end
 
 local function getRequestFunction()
@@ -310,7 +310,9 @@ local function makeScreenGui(name, displayOrder)
     if reuseSplash then
         gui = old
         gui.Enabled = true
-        gui:ClearAllChildren()
+        for _, child in ipairs(gui:GetChildren()) do
+            if child:IsA("GuiObject") then child.Visible = false end
+        end
         gui.DisplayOrder = displayOrder or 50
     else
         if old then old:Destroy() end
@@ -361,7 +363,7 @@ function VelonLib:ShowSplash(options)
         Size = UDim2.fromOffset(420, 130), BackgroundTransparency = 1,
         GroupTransparency = 1, ZIndex = 20,
     })
-    bindResponsiveScale(gui, holder, 450, 160)
+    local _, cleanupResponsiveScale = bindResponsiveScale(gui, holder, 450, 160)
     local card = create("Frame", {
         Parent = holder, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5),
         Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, ZIndex = 21,
@@ -429,9 +431,10 @@ function VelonLib:ShowSplash(options)
     end
     progressConnection:Disconnect()
     progressValue:Destroy()
+    cleanupResponsiveScale()
     if gui.Parent then
+        holder.Visible = false
         gui.Enabled = false
-        gui:ClearAllChildren()
     end
 end
 
