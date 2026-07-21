@@ -3,11 +3,13 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local HttpService = game:GetService("HttpService")
+local CoreGui = game:GetService("CoreGui")
 local GuiService = game:GetService("GuiService")
 
 local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local VelonLib = {
-    Version = "1.1.2",
+    Version = "1.1.3",
     Flags = {},
     Windows = {},
 }
@@ -137,12 +139,46 @@ local function safeCall(callback, ...)
     return ok, resultA, resultB
 end
 
+local resolvedGuiParent
+
+local function getPlayerGuiContainer()
+    local container = PlayerGui:FindFirstChild("VelonLib_RuntimeContainer")
+    if container and container:IsA("Folder") then return container end
+    if container then container:Destroy() end
+    container = Instance.new("Folder")
+    container.Name = "VelonLib_RuntimeContainer"
+    container.Parent = PlayerGui
+    return container
+end
+
 local function getGuiParent()
+    if resolvedGuiParent and resolvedGuiParent.Parent then return resolvedGuiParent end
     if type(gethui) == "function" then
         local ok, result = pcall(gethui)
-        if ok and result then return result end
+        if ok and result then
+            local insidePlayerGui = result == PlayerGui
+            if not insidePlayerGui then
+                pcall(function() insidePlayerGui = result:IsDescendantOf(PlayerGui) end)
+            end
+            if not insidePlayerGui then
+                resolvedGuiParent = result
+                return resolvedGuiParent
+            end
+        end
     end
-    return LocalPlayer:WaitForChild("PlayerGui")
+    local probe = Instance.new("Folder")
+    local coreGuiAvailable = pcall(function() probe.Parent = CoreGui end)
+    probe:Destroy()
+    resolvedGuiParent = coreGuiAvailable and CoreGui or getPlayerGuiContainer()
+    return resolvedGuiParent
+end
+
+local function setGuiParent(gui, preferredParent)
+    local ok = pcall(function() gui.Parent = preferredParent end)
+    if not ok then
+        resolvedGuiParent = getPlayerGuiContainer()
+        gui.Parent = resolvedGuiParent
+    end
 end
 
 local function applyIcon(image, icon)
@@ -282,7 +318,7 @@ local function makeScreenGui(name, displayOrder)
             Name = name, ResetOnSpawn = false, IgnoreGuiInset = true,
             ZIndexBehavior = Enum.ZIndexBehavior.Sibling, DisplayOrder = displayOrder or 50,
         })
-        gui.Parent = guiParent
+        setGuiParent(gui, guiParent)
     end
     local textPreferenceConnection
     if not reuseSplash then
