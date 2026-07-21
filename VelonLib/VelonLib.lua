@@ -3,12 +3,11 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local HttpService = game:GetService("HttpService")
-local CoreGui = game:GetService("CoreGui")
 local GuiService = game:GetService("GuiService")
 
 local LocalPlayer = Players.LocalPlayer
 local VelonLib = {
-    Version = "1.1.0",
+    Version = "1.1.1",
     Flags = {},
     Windows = {},
 }
@@ -143,14 +142,7 @@ local function getGuiParent()
         local ok, result = pcall(gethui)
         if ok and result then return result end
     end
-    local ok = pcall(function() return CoreGui.Name end)
-    if ok then return CoreGui end
     return LocalPlayer:WaitForChild("PlayerGui")
-end
-
-local function protectGui(gui)
-    local protector = (type(syn) == "table" and syn.protect_gui) or protectgui
-    if type(protector) == "function" then pcall(protector, gui) end
 end
 
 local function applyIcon(image, icon)
@@ -282,7 +274,6 @@ local function makeScreenGui(name, displayOrder)
         Name = name, ResetOnSpawn = false, IgnoreGuiInset = true,
         ZIndexBehavior = Enum.ZIndexBehavior.Sibling, DisplayOrder = displayOrder or 50,
     })
-    if guiParent == CoreGui then protectGui(gui) end
     gui.Parent = guiParent
     local textPreferenceConnection
     local ok = pcall(function()
